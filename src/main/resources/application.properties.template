@@ -1,0 +1,18 @@
+# Nombre de la aplicación
+spring.application.name=TechStorePro
+server.port=8080
+
+# Configuración de JPA / Hibernate
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
+spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect
+
+# Configuración de Base de Datos (REEMPLAZAR CON DATOS LOCALES)
+spring.datasource.url=jdbc:postgresql://localhost:5432/TU_BASE_DE_DATOS
+spring.datasource.username=TU_USUARIO
+spring.datasource.password=TU_CONTRASEÑA
+spring.datasource.driver-class-name=org.postgresql.Driver
+
+# Seguridad (JWT)
+api.security.token.secret=${JWT_SECRET:TU_CLAVE_SECRETA_AQUI}
