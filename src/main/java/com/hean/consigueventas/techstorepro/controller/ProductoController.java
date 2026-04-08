@@ -11,7 +11,6 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/productos")
-@CrossOrigin(origins = "*") // Permite que Angular (u otros) se conecten sin errores de CORS
 public class ProductoController {
 
     private final ProductoService proSer;
