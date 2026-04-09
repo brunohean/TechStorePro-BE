@@ -1,6 +1,8 @@
 package com.hean.consigueventas.techstorepro.service;
 
+import com.hean.consigueventas.techstorepro.dto.ProductoDTO;
 import com.hean.consigueventas.techstorepro.entity.Producto;
+import com.hean.consigueventas.techstorepro.mapper.ProductoMapper;
 import com.hean.consigueventas.techstorepro.repository.ProductoRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
@@ -12,31 +14,47 @@ import java.util.List;
 public class ProductoService {
 
     private final ProductoRepository proRepo;
+    private final ProductoMapper proMapper;
 
     // Inyección por constructor (Best Practice)
-    public ProductoService(ProductoRepository productoRepository) {
+    public ProductoService(ProductoRepository productoRepository, ProductoMapper productoMapper) {
         this.proRepo = productoRepository;
+        this.proMapper = productoMapper;
     }
 
     // METODOS
 
     // Listar todos los productos para el catálogo
     @Transactional(readOnly = true)
-    public List<Producto> listarTodos() {
-        return proRepo.findAll();
+    public List<ProductoDTO> listarTodos() {
+        return proMapper.toDtoList(proRepo.findAll());
     }
 
     // Buscar un producto específico (útil para el detalle del producto)
     @Transactional(readOnly = true)
-    public Producto obtenerPorId(Long id) {
-        return proRepo.findById(id)
+    public ProductoDTO obtenerPorId(Long id) {
+        Producto producto = proRepo.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Producto no encontrado con ID: " + id));
+        return proMapper.toDto(producto);
     }
 
-    // Guardar o actualizar (Reservado para ADMIN)
     @Transactional
-    public Producto guardar(Producto producto) {
-        return proRepo.save(producto);
+    public ProductoDTO crear(ProductoDTO dto) {
+        Producto producto = proMapper.toEntity(dto);
+        return proMapper.toDto(proRepo.save(producto));
+    }
+
+    @Transactional
+    public ProductoDTO actualizar(Long id, ProductoDTO dto) {
+        Producto existente = proRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+
+        existente.setNombre(dto.getNombre());
+        existente.setPrecio(dto.getPrecio());
+        existente.setStock(dto.getStock()); // RF-BE-05: Gestión de stock
+        // ... otros campos
+
+        return proMapper.toDto(proRepo.save(existente));
     }
 
     // Eliminar (Reservado para ADMIN)
