@@ -1,9 +1,11 @@
 package com.hean.consigueventas.techstorepro.service;
 
+import com.hean.consigueventas.techstorepro.dto.CarritoDTO;
 import com.hean.consigueventas.techstorepro.entity.Carrito;
 import com.hean.consigueventas.techstorepro.entity.CarritoItem;
 import com.hean.consigueventas.techstorepro.entity.Producto;
 import com.hean.consigueventas.techstorepro.entity.User;
+import com.hean.consigueventas.techstorepro.mapper.CarritoMapper;
 import com.hean.consigueventas.techstorepro.repository.CarritoRepository;
 import com.hean.consigueventas.techstorepro.repository.ProductoRepository;
 import com.hean.consigueventas.techstorepro.repository.UserRepository;
@@ -16,15 +18,17 @@ public class CarritoService {
     private final CarritoRepository carritoRepo;
     private final ProductoRepository productoRepo;
     private final UserRepository userRepo;
+    private final CarritoMapper carritoMapper;
 
-    public CarritoService(CarritoRepository carritoRepository, ProductoRepository productoRepository, UserRepository userRepo) {
+    public CarritoService(CarritoRepository carritoRepository, ProductoRepository productoRepository, UserRepository userRepo, CarritoMapper carritoMapper) {
         this.carritoRepo = carritoRepository;
         this.productoRepo = productoRepository;
         this.userRepo =  userRepo;
+        this.carritoMapper = carritoMapper;
     }
 
     @Transactional
-    public Carrito agregarProducto(Long usuarioId, Long productoId, Integer cantidad) {
+    public CarritoDTO agregarProducto(Long usuarioId, Long productoId, Integer cantidad) {
 
         // Buscar el carrito o crearlo vinculando al usuario
         Carrito carrito = carritoRepo.findByUsuarioId(usuarioId)
@@ -52,16 +56,23 @@ public class CarritoService {
                         }
                 );
 
-        return carritoRepo.save(carrito);
+        Carrito carritoGuardado = carritoRepo.save(carrito);
+        return carritoMapper.toDto(carritoGuardado);
     }
 
     @Transactional(readOnly = true)
-    public Carrito obtenerPorUsuarioId(Long usuarioId) {
-        return carritoRepo.findByUsuarioId(usuarioId)
-                .orElseGet(() -> {
-                    // Si no tiene carrito, se le crea uno nuevo vinculado a su cuenta
-                    // Necesitarás inyectar UserRepository para buscar la entidad User completa
-                    return new Carrito();
-                });
+    public CarritoDTO obtenerCarritoDto(Long usuarioId) {
+        Carrito carrito = carritoRepo.findByUsuarioId(usuarioId)
+                .orElseGet(() -> crearNuevoCarrito(usuarioId));
+        return carritoMapper.toDto(carrito);
+    }
+
+    // Método privado para crear carrito si no existe
+    private Carrito crearNuevoCarrito(Long usuarioId) {
+        User usuario = userRepo.findById(usuarioId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        Carrito nuevo = new Carrito();
+        nuevo.setUsuario(usuario);
+        return carritoRepo.save(nuevo);
     }
 }

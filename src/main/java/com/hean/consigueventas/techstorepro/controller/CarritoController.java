@@ -3,9 +3,11 @@ package com.hean.consigueventas.techstorepro.controller;
 import com.hean.consigueventas.techstorepro.dto.CarritoDTO;
 import com.hean.consigueventas.techstorepro.dto.CarritoItemDTO;
 import com.hean.consigueventas.techstorepro.entity.Carrito;
+import com.hean.consigueventas.techstorepro.security.SecurityConstants;
 import com.hean.consigueventas.techstorepro.security.services.UserDetailsImpl;
 import com.hean.consigueventas.techstorepro.service.CarritoService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -15,30 +17,28 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/carrito")
+@PreAuthorize(SecurityConstants.HAS_ROLE_USER)
 public class CarritoController {
-    private final CarritoService carritoService;
+    private final CarritoService carServ;
 
-    public CarritoController(CarritoService carritoService) {
-        this.carritoService = carritoService;
+    public CarritoController(CarritoService carServ) {
+        this.carServ = carServ;
     }
 
     // 1. Obtener el carrito del usuario autenticado
     @GetMapping
     public ResponseEntity<CarritoDTO> obtenerCarrito() {
-        Long usuarioId = getUsuarioIdAutenticado();
-        Carrito carrito = carritoService.obtenerPorUsuarioId(usuarioId);
-        return ResponseEntity.ok(convertirADto(carrito));
+        return ResponseEntity.ok(carServ.obtenerCarritoDto(getUsuarioIdAutenticado()));
     }
 
     // 2. Agregar producto al carrito
     @PostMapping("/agregar")
+    @PreAuthorize(SecurityConstants.HAS_ROLE_USER)
     public ResponseEntity<CarritoDTO> agregarProducto(
             @RequestParam Long productoId,
             @RequestParam Integer cantidad) {
 
-        Long usuarioId = getUsuarioIdAutenticado();
-        Carrito carritoActualizado = carritoService.agregarProducto(usuarioId, productoId, cantidad);
-        return ResponseEntity.ok(convertirADto(carritoActualizado));
+        return ResponseEntity.ok(carServ.agregarProducto(getUsuarioIdAutenticado(), productoId, cantidad));
     }
 
 
@@ -49,27 +49,5 @@ public class CarritoController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         return userDetails.getId();
-    }
-
-    private CarritoDTO convertirADto(Carrito carrito) {
-        CarritoDTO dto = new CarritoDTO();
-        dto.setId(carrito.getId());
-        dto.setUsername(carrito.getUsuario().getUsername());
-
-        List<CarritoItemDTO> itemDtos = carrito.getItems().stream().map(item ->
-                new CarritoItemDTO(
-                        item.getId(),
-                        item.getProducto().getId(),
-                        item.getProducto().getNombre(),
-                        item.getProducto().getPrecio(),
-                        item.getCantidad()
-                )
-        ).collect(Collectors.toList());
-
-        dto.setItems(itemDtos);
-        // Cálculo rápido del total
-        dto.setTotal(itemDtos.stream().mapToDouble(i -> i.getPrecioUnitario() * i.getCantidad()).sum());
-
-        return dto;
     }
 }

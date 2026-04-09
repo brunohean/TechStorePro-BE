@@ -1,10 +1,12 @@
 package com.hean.consigueventas.techstorepro.config;
 
+import com.hean.consigueventas.techstorepro.security.SecurityConstants;
 import com.hean.consigueventas.techstorepro.security.jwt.AuthTokenFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -21,6 +23,7 @@ import java.util.Arrays;
 // CORS y Security
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
     // Beans de Security
@@ -67,8 +70,13 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**","/productos/**").permitAll() // El catálogo, Registro y Login son público
-                        .anyRequest().authenticated() // Todo lo demás requiere login
+                        // Rutas Públicas
+                        .requestMatchers("/api/auth/**","/api/productos/**").permitAll() // El catálogo, Registro y Login son público
+                        // Rutas Protegidas por Filtro
+                        .requestMatchers("/api/carrito/**").hasRole(SecurityConstants.USER)
+                        .requestMatchers("/api/admin/**").hasRole(SecurityConstants.ADMIN)
+                        // Todo lo demas requiere Autorización (Tokens/Login)
+                        .anyRequest().authenticated()
                 );
 
         // Inyectamos nuestro filtro JWT antes del filtro de usuario/contraseña de Spring
