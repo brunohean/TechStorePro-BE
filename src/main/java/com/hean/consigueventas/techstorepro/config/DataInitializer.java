@@ -2,24 +2,44 @@ package com.hean.consigueventas.techstorepro.config;
 
 import com.hean.consigueventas.techstorepro.entity.Producto;
 import com.hean.consigueventas.techstorepro.entity.Role;
+import com.hean.consigueventas.techstorepro.entity.User;
 import com.hean.consigueventas.techstorepro.repository.ProductoRepository;
 import com.hean.consigueventas.techstorepro.repository.RoleRepository;
+import com.hean.consigueventas.techstorepro.repository.UserRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+import java.util.HashSet;
+import java.util.Set;
 
 @Configuration
 public class DataInitializer {
 
     @Bean
-    CommandLineRunner initData(RoleRepository roleRepo, ProductoRepository prodRepo) {
+    CommandLineRunner initData(RoleRepository roleRepo, ProductoRepository prodRepo,
+                               UserRepository userRepo, PasswordEncoder passwordEncoder) {
         return args -> {
             // 1. Inicialización de Roles con verificación de existencia
-            if (roleRepo.findByNombre("ROLE_USER").isEmpty()) {
-                roleRepo.save(new Role(null, "ROLE_USER"));
-            }
-            if (roleRepo.findByNombre("ROLE_ADMIN").isEmpty()) {
-                roleRepo.save(new Role(null, "ROLE_ADMIN"));
+            Role adminRole = roleRepo.findByNombre("ROLE_ADMIN")
+                    .orElseGet(() -> roleRepo.save(new Role(null, "ROLE_ADMIN")));
+            roleRepo.findByNombre("ROLE_USER")
+                    .orElseGet(() -> roleRepo.save(new Role(null, "ROLE_USER")));
+
+            //  Usuario Administrador Inicial (CISO Path)
+            if (!userRepo.existsByUsername("admin_tech")) {
+                User admin = new User();
+                admin.setUsername("admin_tech");
+                admin.setEmail("admin@techstore.com");
+                admin.setPassword(passwordEncoder.encode("Admin123!")); // Password fuerte
+
+                Set<Role> roles = new HashSet<>();
+                roles.add(adminRole);
+                admin.setRoles(roles);
+
+                userRepo.save(admin);
+                System.out.println("✅ Usuario administrador creado por defecto.");
             }
 
             // 2. Inicialización de Productos (Solo si la tabla está vacía)
