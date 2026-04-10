@@ -1,7 +1,6 @@
 package com.hean.consigueventas.techstorepro.controller;
 
 import com.hean.consigueventas.techstorepro.dto.ProductoDTO;
-import com.hean.consigueventas.techstorepro.entity.Producto;
 import com.hean.consigueventas.techstorepro.security.SecurityConstants;
 import com.hean.consigueventas.techstorepro.service.ProductoService;
 import org.springframework.http.ResponseEntity;

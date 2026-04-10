@@ -15,18 +15,19 @@ public class UserDetailsImpl implements UserDetails {
     private final Long id;
     private final String username;
     private final String email;
-
+    private final boolean activo;
     @JsonIgnore // CISO Check: Nunca serializar la contraseña en el objeto de sesión
     private final String password;
 
     private final Collection<? extends GrantedAuthority> authorities;
 
     public UserDetailsImpl(Long id, String username, String email, String password,
-                           Collection<? extends GrantedAuthority> authorities) {
+                           boolean activo, Collection<? extends GrantedAuthority> authorities) {
         this.id = id;
         this.username = username;
         this.email = email;
         this.password = password;
+        this.activo = activo;
         this.authorities = authorities;
     }
 
@@ -41,6 +42,7 @@ public class UserDetailsImpl implements UserDetails {
                 user.getUsername(),
                 user.getEmail(),
                 user.getPassword(),
+                user.isActivo(),
                 authorities);
     }
 
@@ -53,13 +55,9 @@ public class UserDetailsImpl implements UserDetails {
     @Override
     public String getUsername() { return username; }
 
-    public Long getId() {
-        return id;
-    }
+    public Long getId() { return id; }
 
-    public String getEmail() {
-        return email;
-    }
+    public String getEmail() {return email;}
 
     // En un proyecto real, aquí podrías manejar bloqueos de cuenta (CISO path)
     @Override
@@ -72,5 +70,5 @@ public class UserDetailsImpl implements UserDetails {
     public boolean isCredentialsNonExpired() { return true; }
 
     @Override
-    public boolean isEnabled() { return true; }
+    public boolean isEnabled() { return activo; }
 }

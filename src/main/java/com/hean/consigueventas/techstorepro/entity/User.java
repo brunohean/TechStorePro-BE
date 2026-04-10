@@ -39,6 +39,8 @@ public class User {
     @Size(max = 120) // Se reserva espacio para el hash de BCrypt
     private String password;
 
+    private boolean activo = true;
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "usuario_roles",

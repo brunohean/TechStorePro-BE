@@ -5,6 +5,8 @@ import com.hean.consigueventas.techstorepro.entity.Carrito;
 import com.hean.consigueventas.techstorepro.entity.CarritoItem;
 import com.hean.consigueventas.techstorepro.entity.Producto;
 import com.hean.consigueventas.techstorepro.entity.User;
+import com.hean.consigueventas.techstorepro.exception.custom.BusinessLogicException;
+import com.hean.consigueventas.techstorepro.exception.custom.ResourceNotFoundException;
 import com.hean.consigueventas.techstorepro.mapper.CarritoMapper;
 import com.hean.consigueventas.techstorepro.repository.CarritoRepository;
 import com.hean.consigueventas.techstorepro.repository.ProductoRepository;
@@ -30,21 +32,32 @@ public class CarritoService {
     @Transactional
     public CarritoDTO agregarProducto(Long usuarioId, Long productoId, Integer cantidad) {
 
-        // Buscar el carrito o crearlo vinculando al usuario
+        // 1. Buscar producto con EXCEPCIÓN PERSONALIZADA
+        Producto producto = productoRepo.findById(productoId)
+                .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con ID: " + productoId));
+
+        // 2. VALIDACIÓN DE ESTADO (CISO Check: No permitimos productos desactivados)
+        if (!producto.isActivo()) {
+            throw new BusinessLogicException("El producto '" + producto.getNombre() + "' ya no está disponible para la venta.");
+        }
+
+        // 3. VALIDACIÓN DE STOCK (RF-BE-05) - Integridad Operativa
+        if (producto.getStock() < cantidad) {
+            throw new BusinessLogicException("Stock insuficiente para '" + producto.getNombre() + "'. Disponible: " + producto.getStock());
+        }
+
+        // 4. Buscar o crear el carrito (Usando ResourceNotFoundException)
         Carrito carrito = carritoRepo.findByUsuarioId(usuarioId)
                 .orElseGet(() -> {
                     User usuario = userRepo.findById(usuarioId)
-                            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                            .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con ID: " + usuarioId));
 
                     Carrito nuevoCarrito = new Carrito();
-                    nuevoCarrito.setUsuario(usuario); // <--- VÍNCULO VITAL
+                    nuevoCarrito.setUsuario(usuario);
                     return carritoRepo.save(nuevoCarrito);
                 });
 
-        Producto producto = productoRepo.findById(productoId)
-                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
-
-        // Lógica para actualizar cantidad si ya existe el ítem
+        // 5. Lógica para actualizar cantidad
         carrito.getItems().stream()
                 .filter(item -> item.getProducto().getId().equals(productoId))
                 .findFirst()
@@ -67,10 +80,9 @@ public class CarritoService {
         return carritoMapper.toDto(carrito);
     }
 
-    // Método privado para crear carrito si no existe
     private Carrito crearNuevoCarrito(Long usuarioId) {
         User usuario = userRepo.findById(usuarioId)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con ID: " + usuarioId));
         Carrito nuevo = new Carrito();
         nuevo.setUsuario(usuario);
         return carritoRepo.save(nuevo);
