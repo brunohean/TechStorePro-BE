@@ -1,6 +1,8 @@
 package com.hean.consigueventas.techstorepro.exception;
 
 import com.hean.consigueventas.techstorepro.dto.ErrorDetalles;
+import com.hean.consigueventas.techstorepro.exception.custom.BusinessLogicException;
+import com.hean.consigueventas.techstorepro.exception.custom.ResourceNotFoundException;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -37,5 +39,17 @@ public class GlobalExceptionHandler {
         ex.getBindingResult().getFieldErrors().forEach(error ->
                 errores.put(error.getField(), error.getDefaultMessage()));
         return new ResponseEntity<>(errores, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ErrorDetalles> manejarNotFound(ResourceNotFoundException ex, WebRequest request) {
+        ErrorDetalles error = new ErrorDetalles(LocalDateTime.now(), ex.getMessage(), request.getDescription(false));
+        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(BusinessLogicException.class)
+    public ResponseEntity<ErrorDetalles> manejarNegocio(BusinessLogicException ex, WebRequest request) {
+        ErrorDetalles error = new ErrorDetalles(LocalDateTime.now(), ex.getMessage(), request.getDescription(false));
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 }

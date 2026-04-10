@@ -54,4 +54,12 @@ public class ProductoController {
         return ResponseEntity.noContent().build();
     }
 
+
+    // A.
+    @PatchMapping("/{id}/estado")
+    @PreAuthorize(SecurityConstants.HAS_ROLE_ADMIN)
+    public ResponseEntity<Void> cambiarEstado(@PathVariable Long id, @RequestParam boolean activo) {
+        proSer.cambiarEstado(id, activo);
+        return ResponseEntity.noContent().build();
+    }
 }

@@ -2,9 +2,13 @@ package com.hean.consigueventas.techstorepro.service;
 
 import com.hean.consigueventas.techstorepro.dto.ProductoDTO;
 import com.hean.consigueventas.techstorepro.entity.Producto;
+import com.hean.consigueventas.techstorepro.exception.custom.ResourceNotFoundException;
 import com.hean.consigueventas.techstorepro.mapper.ProductoMapper;
 import com.hean.consigueventas.techstorepro.repository.ProductoRepository;
+import com.hean.consigueventas.techstorepro.security.SecurityConstants;
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,7 +31,18 @@ public class ProductoService {
     // Listar todos los productos para el catálogo
     @Transactional(readOnly = true)
     public List<ProductoDTO> listarTodos() {
-        return proMapper.toDtoList(proRepo.findAll());
+        // Obtenemos las autoridades del usuario autenticado
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isAdmin = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_" + SecurityConstants.ADMIN));
+
+        List<Producto> productos;
+        if (isAdmin) {
+            productos = proRepo.findAll(); // Admin ve TODO
+        } else {
+            productos = proRepo.findByActivoTrue(); // User solo ve activos
+        }
+        return proMapper.toDtoList(productos);
     }
 
     // Buscar un producto específico (útil para el detalle del producto)
@@ -65,4 +80,15 @@ public class ProductoService {
         }
         proRepo.deleteById(id);
     }
+
+
+    // Actualiza Estado de Producto
+    @Transactional
+    public void cambiarEstado(Long id, boolean estado) {
+        Producto producto = proRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con ID: " + id));
+        producto.setActivo(estado);
+        proRepo.save(producto);
+    }
+
 }

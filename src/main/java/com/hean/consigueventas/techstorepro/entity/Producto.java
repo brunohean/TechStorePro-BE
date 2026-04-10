@@ -12,6 +12,7 @@ import lombok.*;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class Producto {
 
     @Id
@@ -19,7 +20,7 @@ public class Producto {
     private Long id;
 
     @NotBlank(message = "El nombre del producto no puede estar vacío")
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true, length = 100)
     private String nombre;
 
     @Column(length = 500)
@@ -36,4 +37,6 @@ public class Producto {
     private Integer stock;
 
     private String imagenUrl;
+
+    private boolean activo = true;
 }

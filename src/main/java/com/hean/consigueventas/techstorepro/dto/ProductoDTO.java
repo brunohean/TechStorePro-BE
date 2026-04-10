@@ -14,4 +14,5 @@ public class ProductoDTO {
     private Double precio;
     private String imagenUrl;
     private Integer stock; // Lo incluimos para que Angular sepa si mostrar "Agotado"
+    private boolean activo;
 }
