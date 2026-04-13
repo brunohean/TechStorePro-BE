@@ -1,8 +1,9 @@
 package com.hean.consigueventas.techstorepro.controller;
 
-import com.hean.consigueventas.techstorepro.dto.AdminUserUpdateDTO;
-import com.hean.consigueventas.techstorepro.dto.UserDTO;
-import com.hean.consigueventas.techstorepro.dto.UserSelfUpdateDTO;
+import com.hean.consigueventas.techstorepro.dto.user.AdminUserUpdateDTO;
+import com.hean.consigueventas.techstorepro.dto.user.UserDTO;
+import com.hean.consigueventas.techstorepro.dto.user.UserSelfUpdateDTO;
+import com.hean.consigueventas.techstorepro.security.SecurityUtils;
 import com.hean.consigueventas.techstorepro.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -35,8 +36,8 @@ public class UserController {
     }
 
     // C.1. RUTA PARA EL DUEÑO DE LA CUENTA
-    @PutMapping("/mi-perfil/{id}")
-    @PreAuthorize("#id == principal.id")
+    @PutMapping("/actualizar-perfil/{id}")
+    @PreAuthorize("#id == principal.id and principal.enabled")
     public ResponseEntity<String> actualizarMiPerfil(@PathVariable Long id, @RequestBody UserSelfUpdateDTO dto) {
         userSer.actualizarMiPerfil(id, dto);
         return ResponseEntity.ok("Tu perfil ha sido actualizado.");
@@ -56,5 +57,21 @@ public class UserController {
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         userSer.eliminar(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // E. OBTENER MI PERFIL (Uso de SecurityUtils - Sin ID en URL)
+    @GetMapping("/me")
+    @PreAuthorize("principal.enabled") // Si activo es false, principal.enabled es false -> 403
+    public ResponseEntity<UserDTO> obtenerMisDatos() {
+        Long miId = SecurityUtils.getUsuarioIdAutenticado(); // Extraemos la identidad directamente del Token JWT
+        return ResponseEntity.ok(userSer.buscarPorId(miId));
+    }
+
+    // F. SOLICITAR BAJA (Soft Delete por el propio usuario)
+    @DeleteMapping("/baja/{id}")
+    @PreAuthorize("#id == principal.id")
+    public ResponseEntity<String> darDeBaja(@PathVariable Long id) {
+        userSer.desactivarCuenta(id);
+        return ResponseEntity.ok("Tu cuenta ha sido desactivada. Tienes 30 días para solicitar reactivación.");
     }
 }

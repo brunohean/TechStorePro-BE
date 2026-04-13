@@ -1,8 +1,8 @@
 package com.hean.consigueventas.techstorepro.service;
 
-import com.hean.consigueventas.techstorepro.dto.AdminUserUpdateDTO;
-import com.hean.consigueventas.techstorepro.dto.UserDTO;
-import com.hean.consigueventas.techstorepro.dto.UserSelfUpdateDTO;
+import com.hean.consigueventas.techstorepro.dto.user.AdminUserUpdateDTO;
+import com.hean.consigueventas.techstorepro.dto.user.UserDTO;
+import com.hean.consigueventas.techstorepro.dto.user.UserSelfUpdateDTO;
 import com.hean.consigueventas.techstorepro.entity.Role;
 import com.hean.consigueventas.techstorepro.entity.User;
 import com.hean.consigueventas.techstorepro.exception.custom.BusinessLogicException;
@@ -14,6 +14,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -71,6 +73,7 @@ public class UserService {
         if (dto.getNuevoPassword() != null && !dto.getNuevoPassword().isEmpty()) {
             user.setPassword(passEnco.encode(dto.getNuevoPassword()));
         }
+        if (dto.getActivo() != null) { user.setActivo(dto.getActivo()); }
 
         // Lógica de Roles: Transformamos Strings en Entidades Role
         if (dto.getRoles() != null && !dto.getRoles().isEmpty()) {
@@ -106,12 +109,20 @@ public class UserService {
     }
 
     @Transactional
-    public void eliminarLogico(Long id) {
-        User user = userRepo.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+    public void desactivarCuenta(Long id) {
+        User usuario = userRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con ID: " + id));
 
-        user.setActivo(false); // La cuenta queda en el sistema, pero no puede loguearse
-        userRepo.save(user);
-        // CISO Note: Podrías añadir un log aquí para que el Admin revise la petición
+        if (!usuario.isActivo()) {
+            throw new BusinessLogicException("La cuenta ya fue desactivada el: " +
+                    usuario.getFechaDesactivacion().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
+        }
+
+        usuario.setActivo(false); // Soft Delete
+        usuario.setFechaDesactivacion(LocalDateTime.now()); // Seteamos el timestamp actual
+        userRepo.save(usuario);
+        // CISO Insight: Mantener los datos permite auditorías posteriores si hubo fraude. Podrías añadir un log aquí para que el Admin revise la petición
     }
+
+
 }

@@ -1,6 +1,6 @@
 package com.hean.consigueventas.techstorepro.mapper;
 
-import com.hean.consigueventas.techstorepro.dto.UserDTO;
+import com.hean.consigueventas.techstorepro.dto.user.UserDTO;
 import com.hean.consigueventas.techstorepro.entity.User;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

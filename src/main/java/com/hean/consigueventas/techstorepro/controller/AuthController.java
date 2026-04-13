@@ -1,9 +1,9 @@
 package com.hean.consigueventas.techstorepro.controller;
 
-import com.hean.consigueventas.techstorepro.dto.JwtResponse;
-import com.hean.consigueventas.techstorepro.dto.LoginRequest;
+import com.hean.consigueventas.techstorepro.dto.security.JwtResponse;
+import com.hean.consigueventas.techstorepro.dto.security.LoginRequest;
 import com.hean.consigueventas.techstorepro.dto.MensajeResponse;
-import com.hean.consigueventas.techstorepro.dto.RegistroRequest;
+import com.hean.consigueventas.techstorepro.dto.user.RegistroRequest;
 import com.hean.consigueventas.techstorepro.entity.User;
 import com.hean.consigueventas.techstorepro.repository.UserRepository;
 import com.hean.consigueventas.techstorepro.security.jwt.JwtUtils;
