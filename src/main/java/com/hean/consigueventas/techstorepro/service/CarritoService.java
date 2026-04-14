@@ -1,6 +1,6 @@
 package com.hean.consigueventas.techstorepro.service;
 
-import com.hean.consigueventas.techstorepro.dto.CarritoDTO;
+import com.hean.consigueventas.techstorepro.dto.carrito.CarritoDTO;
 import com.hean.consigueventas.techstorepro.entity.Carrito;
 import com.hean.consigueventas.techstorepro.entity.CarritoItem;
 import com.hean.consigueventas.techstorepro.entity.Producto;

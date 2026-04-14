@@ -1,4 +1,4 @@
-package com.hean.consigueventas.techstorepro.entity;
+package com.hean.consigueventas.techstorepro.entity.pedido;
 
 public enum EstadoPedido {
     PENDIENTE,

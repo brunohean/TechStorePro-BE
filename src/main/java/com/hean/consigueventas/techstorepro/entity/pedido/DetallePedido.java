@@ -1,15 +1,13 @@
-package com.hean.consigueventas.techstorepro.entity;
+package com.hean.consigueventas.techstorepro.entity.pedido;
 
+import com.hean.consigueventas.techstorepro.entity.Producto;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
 @Table(name = "pedido_detalles")
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
+@Getter @Setter
+@NoArgsConstructor @AllArgsConstructor @Builder
 public class DetallePedido {
 
     @Id

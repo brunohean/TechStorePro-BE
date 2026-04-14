@@ -1,4 +1,4 @@
-package com.hean.consigueventas.techstorepro.dto;
+package com.hean.consigueventas.techstorepro.dto.carrito;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

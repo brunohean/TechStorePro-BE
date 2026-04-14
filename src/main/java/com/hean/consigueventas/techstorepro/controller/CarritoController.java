@@ -1,6 +1,6 @@
 package com.hean.consigueventas.techstorepro.controller;
 
-import com.hean.consigueventas.techstorepro.dto.CarritoDTO;
+import com.hean.consigueventas.techstorepro.dto.carrito.CarritoDTO;
 import com.hean.consigueventas.techstorepro.security.SecurityConstants;
 import com.hean.consigueventas.techstorepro.security.SecurityUtils;
 import com.hean.consigueventas.techstorepro.service.CarritoService;
