@@ -1,13 +1,13 @@
 package com.hean.consigueventas.techstorepro.dto.carrito;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Getter @Setter
 @AllArgsConstructor @NoArgsConstructor
-public class CarritoItemDTO {
-    private Long id;
+public class AgregarAlCarritoRequest {
     private Long productoId;
-    private String productoNombre;
-    private Double precioUnitario;
     private Integer cantidad;
 }

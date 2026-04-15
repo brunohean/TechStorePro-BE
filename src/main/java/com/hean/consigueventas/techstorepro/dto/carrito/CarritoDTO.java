@@ -1,14 +1,11 @@
 package com.hean.consigueventas.techstorepro.dto.carrito;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.List;
 
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
+@Getter @Setter
+@AllArgsConstructor @NoArgsConstructor
 public class CarritoDTO {
     private Long id;
     private String username; // Solo el nombre, nada de passwords

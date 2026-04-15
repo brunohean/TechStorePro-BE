@@ -53,9 +53,8 @@ public class ProductoController {
         return ResponseEntity.noContent().build();
     }
 
-
-    // A.
-    @PatchMapping("/{id}/estado")
+    // 6. Desactivar producto (ADMIN)
+    @PatchMapping("/{id}/estado")  //Ejemplo: /api/productos/1/estado?activo=false
     @PreAuthorize(SecurityConstants.HAS_ROLE_ADMIN)
     public ResponseEntity<Void> cambiarEstado(@PathVariable Long id, @RequestParam boolean activo) {
         proSer.cambiarEstado(id, activo);

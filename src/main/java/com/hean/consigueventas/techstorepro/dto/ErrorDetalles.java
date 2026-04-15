@@ -1,14 +1,11 @@
 package com.hean.consigueventas.techstorepro.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
+@Getter @Setter
+@AllArgsConstructor @NoArgsConstructor
 public class ErrorDetalles {
     private LocalDateTime timestamp;
     private String mensaje;

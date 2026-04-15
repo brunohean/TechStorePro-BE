@@ -1,14 +1,11 @@
 package com.hean.consigueventas.techstorepro.dto.security;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.List;
 
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
+@Getter @Setter
+@AllArgsConstructor @NoArgsConstructor
 public class JwtResponse {
     private String token;
     private String type = "Bearer";

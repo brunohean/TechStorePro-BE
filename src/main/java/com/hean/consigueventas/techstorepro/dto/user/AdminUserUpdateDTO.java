@@ -1,15 +1,12 @@
 package com.hean.consigueventas.techstorepro.dto.user;
 
 import jakarta.validation.constraints.Email;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.Set;
 
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
+@Getter @Setter
+@AllArgsConstructor @NoArgsConstructor
 public class AdminUserUpdateDTO {
     private String username;
     @Email(message = "Formato de correo inválido")

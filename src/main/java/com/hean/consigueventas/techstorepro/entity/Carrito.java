@@ -2,7 +2,10 @@ package com.hean.consigueventas.techstorepro.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,6 +22,14 @@ public class Carrito {
     @OneToOne
     @JoinColumn(name = "usuario_id", nullable = false)
     private User usuario;
+
+    @Column(name = "fecha_ultima_actualizacion")
+    @UpdateTimestamp // <--- Se actualiza automáticamente en cada cambio
+    private LocalDateTime fechaUltimaActualizacion;
+
+    @Column(updatable = false)
+    @CreationTimestamp // <--- Se queda fija con la fecha de creación
+    private LocalDateTime fechaCreacion;
 
     @OneToMany(mappedBy = "carrito", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CarritoItem> items = new ArrayList<>();

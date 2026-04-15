@@ -1,13 +1,10 @@
 package com.hean.consigueventas.techstorepro.dto.security;
 
 import jakarta.validation.constraints.NotBlank;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
+@Getter @Setter
+@AllArgsConstructor @NoArgsConstructor
 public class LoginRequest {
     @NotBlank
     private String username;
