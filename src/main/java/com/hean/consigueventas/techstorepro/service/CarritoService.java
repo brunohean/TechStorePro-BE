@@ -1,6 +1,6 @@
 package com.hean.consigueventas.techstorepro.service;
 
-import com.hean.consigueventas.techstorepro.dto.carrito.ActualizacionMasivaRequest;
+import com.hean.consigueventas.techstorepro.dto.carrito.ActualizarMasivoRequest;
 import com.hean.consigueventas.techstorepro.dto.carrito.CarritoDTO;
 import com.hean.consigueventas.techstorepro.dto.carrito.ItemUpdateDTO;
 import com.hean.consigueventas.techstorepro.entity.Carrito;
@@ -121,7 +121,7 @@ public class CarritoService {
 
     // USER: Actualización Masiva
     @Transactional
-    public CarritoDTO actualizarMasivo(ActualizacionMasivaRequest request) {
+    public CarritoDTO actualizarMasivo(ActualizarMasivoRequest request) {
         Long usuarioId = SecurityUtils.getUsuarioIdAutenticado();
         Carrito carrito = carritoRepo.findByUsuarioId(usuarioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Carrito no encontrado"));
