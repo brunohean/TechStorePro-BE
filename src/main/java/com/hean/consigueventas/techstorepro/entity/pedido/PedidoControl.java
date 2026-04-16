@@ -24,6 +24,10 @@ public class PedidoControl {
     private boolean visibleParaUsuario = true;
     private boolean visibleParaAdmin = true;
 
+    private String accion; // ej: CHECKOUT_EXITOSO
+    private String detalle; // ej: "El usuario finalizo la compra..."
+    private LocalDateTime fechaAccion; // La fecha que se llevo a cabo la accion
+
     private LocalDateTime fechaUltimoCambioEstado;
     private String motivoCancelacion;
     private String ipRegistro;

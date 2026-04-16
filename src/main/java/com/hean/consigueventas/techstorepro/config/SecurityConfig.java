@@ -75,8 +75,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**","/api/productos/**").permitAll() // El catálogo, Registro y Login son público
                         // Rutas Protegidas por Filtro
                         .requestMatchers("/api/carrito/**").hasAnyRole(SecurityConstants.ADMIN,SecurityConstants.USER)
-                        .requestMatchers("/api/admin/**").hasRole(SecurityConstants.ADMIN)
+                        .requestMatchers("/api/pedidos/**").hasAnyRole(SecurityConstants.ADMIN,SecurityConstants.USER)
                         .requestMatchers("/api/usuarios/**").hasAnyRole(SecurityConstants.ADMIN,SecurityConstants.USER)
+                        .requestMatchers("/api/admin/**").hasRole(SecurityConstants.ADMIN)
+
                         // Todo lo demas requiere Autorización (Tokens/Login)
                         .anyRequest().authenticated()
                 );
