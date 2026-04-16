@@ -15,7 +15,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/carrito")
-@PreAuthorize(SecurityConstants.HAS_ROLE_USER)
+@PreAuthorize("hasAnyRole('ADMIN','USER')")
 public class CarritoController {
     private final CarritoService carServ;
 
@@ -25,6 +25,7 @@ public class CarritoController {
 
     // A. OBTENER EL CARRITO DEL USUARIO AUTENTICADO
     @GetMapping
+    @PreAuthorize(SecurityConstants.HAS_ROLE_USER)
     public ResponseEntity<CarritoDTO> obtenerCarrito() {
         return ResponseEntity.ok(carServ.obtenerCarritoDto(SecurityUtils.getUsuarioIdAutenticado()));
     }

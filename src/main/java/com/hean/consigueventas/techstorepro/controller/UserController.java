@@ -13,6 +13,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/usuarios")
+@PreAuthorize("hasAnyRole('USER','ADMIN')")
 public class UserController {
 
     private final UserService userSer;

@@ -69,12 +69,14 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable()) // Deshabilitado para desarrollo (CISO: se habilita con JWT/Tokens)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
+                // SE BLOQUEA POR RUTAS, NO POR ROLES.
                 .authorizeHttpRequests(auth -> auth
                         // Rutas Públicas
                         .requestMatchers("/api/auth/**","/api/productos/**").permitAll() // El catálogo, Registro y Login son público
                         // Rutas Protegidas por Filtro
-                        .requestMatchers("/api/carrito/**").hasRole(SecurityConstants.USER)
+                        .requestMatchers("/api/carrito/**").hasAnyRole(SecurityConstants.ADMIN,SecurityConstants.USER)
                         .requestMatchers("/api/admin/**").hasRole(SecurityConstants.ADMIN)
+                        .requestMatchers("/api/usuarios/**").hasAnyRole(SecurityConstants.ADMIN,SecurityConstants.USER)
                         // Todo lo demas requiere Autorización (Tokens/Login)
                         .anyRequest().authenticated()
                 );

@@ -187,14 +187,15 @@ public class CarritoService {
         LocalDateTime limite = LocalDateTime.now().minusHours(horasInactividad);
         List<Carrito> carritosObsoletos = carritoRepo.findByFechaUltimaActualizacionBefore(limite);
 
-        int cantidadLimpiada = 0;
-        for (Carrito carrito : carritosObsoletos) {
-            if (!carrito.getItems().isEmpty()) {
-                carrito.getItems().clear(); // El orphanRemoval se encarga de la DB
-                carritoRepo.save(carrito);
-                cantidadLimpiada++;
-            }
+        List<Carrito> carritosALimpiar = carritosObsoletos.stream()
+                .filter(c -> !c.getItems().isEmpty())
+                .peek(c -> c.getItems().clear()) // Limpiamos la lista (aquí actúa el orphanRemoval)
+                .collect(Collectors.toList());
+
+        if (!carritosALimpiar.isEmpty()) {
+            carritoRepo.saveAll(carritosALimpiar);
         }
-        return cantidadLimpiada;
+
+        return carritosALimpiar.size();
     }
 }
