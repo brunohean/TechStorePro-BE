@@ -18,6 +18,14 @@ public class SecurityUtils {
         return userDetails.getId();
     }
 
+    // Para Auditoría y Trazabilidad (Username)
+    public static String getUsernameAutenticado() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) return "SISTEMA";
+        // En Spring Security con JWT, el principal suele ser el username
+        return auth.getName();
+    }
+
     // Verifica si el usuario autenticado es Admin
     public static boolean esAdmin() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();

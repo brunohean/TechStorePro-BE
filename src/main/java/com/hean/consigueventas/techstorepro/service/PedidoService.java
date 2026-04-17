@@ -2,19 +2,16 @@ package com.hean.consigueventas.techstorepro.service;
 
 import com.hean.consigueventas.techstorepro.dto.carrito.CarritoDTO;
 import com.hean.consigueventas.techstorepro.dto.carrito.CarritoItemDTO;
+import com.hean.consigueventas.techstorepro.dto.pedido.CambiarEstadoRequest;
+import com.hean.consigueventas.techstorepro.dto.pedido.CancelarPedidoRequest;
 import com.hean.consigueventas.techstorepro.dto.pedido.PedidoDTO;
+import com.hean.consigueventas.techstorepro.dto.pedido.PedidoEstadoLogDTO;
 import com.hean.consigueventas.techstorepro.entity.*;
-import com.hean.consigueventas.techstorepro.entity.pedido.DetallePedido;
-import com.hean.consigueventas.techstorepro.entity.pedido.EstadoPedido;
-import com.hean.consigueventas.techstorepro.entity.pedido.Pedido;
-import com.hean.consigueventas.techstorepro.entity.pedido.PedidoControl;
+import com.hean.consigueventas.techstorepro.entity.pedido.*;
 import com.hean.consigueventas.techstorepro.exception.custom.BusinessLogicException;
 import com.hean.consigueventas.techstorepro.exception.custom.ResourceNotFoundException;
 import com.hean.consigueventas.techstorepro.mapper.PedidoMapper;
-import com.hean.consigueventas.techstorepro.repository.CarritoRepository;
-import com.hean.consigueventas.techstorepro.repository.PedidoControlRepository;
-import com.hean.consigueventas.techstorepro.repository.PedidoRepository;
-import com.hean.consigueventas.techstorepro.repository.ProductoRepository;
+import com.hean.consigueventas.techstorepro.repository.*;
 import com.hean.consigueventas.techstorepro.security.SecurityUtils;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -28,20 +25,23 @@ import java.util.stream.Collectors;
 public class PedidoService {
 
     private final PedidoRepository pedidoRepo;
+    private final PedidoEstadoLogRepository logRepo;
+    private final PedidoControlRepository controlRepo;
     private final CarritoRepository carritoRepo;
     private final CarritoService carritoService;
     private final ProductoRepository productoRepo;
-    private final PedidoControlRepository controlRepo;
     private final PedidoMapper pedidoMapper;
 
     public PedidoService(PedidoRepository pedidoRepository, CarritoRepository carritoRepository,
                          ProductoRepository productoRepository, PedidoControlRepository controlRepository,
-                         CarritoService carritoService, PedidoMapper pedidoMapper1) {
+                         CarritoService carritoService, PedidoEstadoLogRepository logRepository,
+                         PedidoMapper pedidoMapper1) {
         this.pedidoRepo = pedidoRepository;
         this.carritoRepo = carritoRepository;
         this.carritoService = carritoService;
         this.productoRepo = productoRepository;
         this.controlRepo = controlRepository;
+        this.logRepo = logRepository;
         this.pedidoMapper = pedidoMapper1;
     }
 
@@ -145,16 +145,37 @@ public class PedidoService {
 
     // C. ACTUALIZAR ESTADO (Solo Admin)
     @Transactional
-    public PedidoDTO actualizarEstado(Long id, EstadoPedido nuevoEstado) {
+    public PedidoDTO actualizarEstado(Long id, CambiarEstadoRequest request, String ipOrigen) {
         Pedido pedido = pedidoRepo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Pedido no encontrado"));
 
-        // Lógica de negocio: No se puede cancelar algo ya entregado
-        if (pedido.getEstado() == EstadoPedido.ENTREGADO && nuevoEstado == EstadoPedido.CANCELADO) {
-            throw new BusinessLogicException("No se puede cancelar un pedido que ya fue entregado.");
-        }
+        EstadoPedido estadoAnterior = pedido.getEstado();
+        EstadoPedido estadoNuevo = request.getNuevoEstado();
 
-        pedido.setEstado(nuevoEstado);
+        // 1. Actualizar el pedido
+        pedido.setEstado(estadoNuevo);
+
+        // 2. Actualizar PedidoControl (Última foto)
+        PedidoControl control = pedido.getControl();
+        control.setFechaUltimoCambioEstado(LocalDateTime.now());
+        control.setDetalle(request.getMotivo());
+        control.setAccion("CAMBIO_ESTADO: " + estadoNuevo);
+        control.setIpRegistro(ipOrigen); // Actualizamos la última IP de gestión
+        // No necesitamos llamar a controlRepo.save() si tenemos CascadeType.ALL en Pedido
+
+        // 3. Crear el LOG HISTÓRICO (La huella digital/log historico)
+        PedidoEstadoLog log = PedidoEstadoLog.builder()
+                .pedido(pedido)
+                .estadoAnterior(estadoAnterior)
+                .estadoNuevo(estadoNuevo)
+                .fechaCambio(LocalDateTime.now())
+                .responsable(SecurityUtils.getUsernameAutenticado())
+                .motivo(request.getMotivo())
+                .ipOrigen(ipOrigen) // Se obtiene de HttpServletRequest
+                .build();
+
+        logRepo.save(log);
+
         return pedidoMapper.toDto(pedidoRepo.save(pedido));
     }
 
@@ -189,32 +210,63 @@ public class PedidoService {
     }
 
     @Transactional
-    public PedidoDTO cancelarPedidoPropio(Long id, String motivo) {
+    public PedidoDTO cancelarPedidoPropio(Long id, CancelarPedidoRequest request, String ipOrigen) {
         Pedido pedido = pedidoRepo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Pedido no encontrado"));
 
-        // CISO Check: Validar propiedad y estado
+        // 1. CISO Check: Validar propiedad (Mantenemos tu método que está perfecto)
         if (!SecurityUtils.esDueno(pedido.getUsuario().getId())) {
             throw new AccessDeniedException("No tienes permiso para cancelar este pedido.");
         }
 
+        // 2. Validar estado permitido
         if (pedido.getEstado() != EstadoPedido.PENDIENTE) {
             throw new BusinessLogicException("Solo se pueden cancelar pedidos en estado PENDIENTE.");
         }
 
-        // Devolución de Stock (RF-BE-05)
+        EstadoPedido estadoAnterior = pedido.getEstado();
+
+        // 3. Devolución de Stock (RF-BE-05) - ¡Vital mantener tu lógica!
         for (DetallePedido detalle : pedido.getDetalles()) {
             Producto producto = detalle.getProducto();
             producto.setStock(producto.getStock() + detalle.getCantidad());
-            productoRepo.save(producto);
+            productoRepo.save(producto); // Reabastecemos el inventario
         }
 
-        // Actualizar estados
+        // 4. Actualizar estado principal
         pedido.setEstado(EstadoPedido.CANCELADO);
-        pedido.getControl().setMotivoCancelacion(motivo);
-        pedido.getControl().setFechaUltimoCambioEstado(LocalDateTime.now());
+
+        // 5. Actualizar PedidoControl (La "Foto Actual")
+        PedidoControl control = pedido.getControl();
+        control.setMotivoCancelacion(request.getMotivo());
+        control.setFechaUltimoCambioEstado(LocalDateTime.now());
+        // -> Añadimos estos dos campos nuevos para la auditoría
+        control.setAccion("CANCELACION_USUARIO");
+        control.setIpRegistro(ipOrigen);
+
+        // 6. Registrar el Historial (La huella inmutable que creamos hoy)
+        PedidoEstadoLog log = PedidoEstadoLog.builder()
+                .pedido(pedido)
+                .estadoAnterior(estadoAnterior)
+                .estadoNuevo(EstadoPedido.CANCELADO)
+                .fechaCambio(LocalDateTime.now())
+                .responsable(SecurityUtils.getUsernameAutenticado()) // Registramos que fue el cliente
+                .motivo(request.getMotivo())
+                .ipOrigen(ipOrigen)
+                .build();
+
+        logRepo.save(log);
 
         return pedidoMapper.toDto(pedidoRepo.save(pedido));
+    }
+
+    @Transactional(readOnly = true)
+    public List<PedidoEstadoLogDTO> obtenerHistorial(Long pedidoId) {
+        if (!pedidoRepo.existsById(pedidoId)) {
+            throw new ResourceNotFoundException("Pedido no encontrado");
+        }
+        List<PedidoEstadoLog> logs = logRepo.findByPedidoIdOrderByFechaCambioDesc(pedidoId);
+        return pedidoMapper.toLogDtoList(logs); // Aquí se usa el método que causaba el warning
     }
 
 

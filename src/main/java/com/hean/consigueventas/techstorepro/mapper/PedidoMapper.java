@@ -2,10 +2,14 @@ package com.hean.consigueventas.techstorepro.mapper;
 
 import com.hean.consigueventas.techstorepro.dto.pedido.DetallePedidoDTO;
 import com.hean.consigueventas.techstorepro.dto.pedido.PedidoDTO;
+import com.hean.consigueventas.techstorepro.dto.pedido.PedidoEstadoLogDTO;
 import com.hean.consigueventas.techstorepro.entity.pedido.DetallePedido;
 import com.hean.consigueventas.techstorepro.entity.pedido.Pedido;
+import com.hean.consigueventas.techstorepro.entity.pedido.PedidoEstadoLog;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+
+import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface PedidoMapper {
@@ -17,4 +21,9 @@ public interface PedidoMapper {
 
     @Mapping(target = "detalles", source = "detalles")
     PedidoDTO toDto(Pedido pedido);
+
+
+    PedidoEstadoLogDTO toLogDto(PedidoEstadoLog log);
+
+    List<PedidoEstadoLogDTO> toLogDtoList(List<PedidoEstadoLog> logs);
 }
