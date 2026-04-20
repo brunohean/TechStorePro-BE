@@ -7,21 +7,23 @@ import com.hean.consigueventas.techstorepro.mapper.ProductoMapper;
 import com.hean.consigueventas.techstorepro.repository.ProductoRepository;
 import com.hean.consigueventas.techstorepro.security.SecurityUtils;
 import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor // Genera el constructor para los campos 'final'
 public class ProductoService {
 
     private final ProductoRepository proRepo;
     private final ProductoMapper proMapper;
 
-    public ProductoService(ProductoRepository productoRepository, ProductoMapper productoMapper) {
+    /*public ProductoService(ProductoRepository productoRepository, ProductoMapper productoMapper) {
         this.proRepo = productoRepository;
         this.proMapper = productoMapper;
-    }
+    }*/
 
     // Listar todos los productos para el catálogo
     @Transactional(readOnly = true)

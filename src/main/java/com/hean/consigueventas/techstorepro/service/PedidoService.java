@@ -1,18 +1,27 @@
 package com.hean.consigueventas.techstorepro.service;
 
-import com.hean.consigueventas.techstorepro.dto.carrito.CarritoDTO;
-import com.hean.consigueventas.techstorepro.dto.carrito.CarritoItemDTO;
 import com.hean.consigueventas.techstorepro.dto.pedido.CambiarEstadoRequest;
 import com.hean.consigueventas.techstorepro.dto.pedido.CancelarPedidoRequest;
 import com.hean.consigueventas.techstorepro.dto.pedido.PedidoDTO;
 import com.hean.consigueventas.techstorepro.dto.pedido.PedidoEstadoLogDTO;
 import com.hean.consigueventas.techstorepro.entity.*;
+import com.hean.consigueventas.techstorepro.entity.carrito.Carrito;
+import com.hean.consigueventas.techstorepro.entity.carrito.CarritoEvento;
+import com.hean.consigueventas.techstorepro.entity.carrito.TipoEventoCarrito;
 import com.hean.consigueventas.techstorepro.entity.pedido.*;
 import com.hean.consigueventas.techstorepro.exception.custom.BusinessLogicException;
 import com.hean.consigueventas.techstorepro.exception.custom.ResourceNotFoundException;
 import com.hean.consigueventas.techstorepro.mapper.PedidoMapper;
 import com.hean.consigueventas.techstorepro.repository.*;
+import com.hean.consigueventas.techstorepro.repository.carrito.CarritoEventoRepository;
+import com.hean.consigueventas.techstorepro.repository.carrito.CarritoRepository;
+import com.hean.consigueventas.techstorepro.repository.pedido.PedidoControlRepository;
+import com.hean.consigueventas.techstorepro.repository.pedido.PedidoEstadoLogRepository;
+import com.hean.consigueventas.techstorepro.repository.pedido.PedidoRepository;
 import com.hean.consigueventas.techstorepro.security.SecurityUtils;
+import com.hean.consigueventas.techstorepro.utils.RequestUtils;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,28 +31,18 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor // Genera el constructor para los campos 'final'
 public class PedidoService {
 
     private final PedidoRepository pedidoRepo;
     private final PedidoEstadoLogRepository logRepo;
     private final PedidoControlRepository controlRepo;
     private final CarritoRepository carritoRepo;
+    private final CarritoEventoRepository carEventRepo;
     private final CarritoService carritoService;
     private final ProductoRepository productoRepo;
     private final PedidoMapper pedidoMapper;
-
-    public PedidoService(PedidoRepository pedidoRepository, CarritoRepository carritoRepository,
-                         ProductoRepository productoRepository, PedidoControlRepository controlRepository,
-                         CarritoService carritoService, PedidoEstadoLogRepository logRepository,
-                         PedidoMapper pedidoMapper1) {
-        this.pedidoRepo = pedidoRepository;
-        this.carritoRepo = carritoRepository;
-        this.carritoService = carritoService;
-        this.productoRepo = productoRepository;
-        this.controlRepo = controlRepository;
-        this.logRepo = logRepository;
-        this.pedidoMapper = pedidoMapper1;
-    }
+    private final HttpServletRequest httpRequest;
 
     @Transactional
     public PedidoDTO procesarCheckout() {
@@ -56,6 +55,18 @@ public class PedidoService {
         if (carrito.getItems().isEmpty()) {
             throw new BusinessLogicException("El carrito está vacío.");
         }
+
+        // Registro de Analytics
+        CarritoEvento evento = CarritoEvento.builder()
+                .usuarioId(usuarioId)
+                .tipoEvento(TipoEventoCarrito.INTENTO_CHECKOUT)
+                // productoId va null porque un checkout engloba todo el carrito
+                .productoId(null)
+                .cantidad(0)
+                .fechaEvento(LocalDateTime.now())
+                .ipOrigen(RequestUtils.getClientIp(httpRequest))
+                .build();
+        carEventRepo.save(evento);
 
         // 2. Crear instancia de Pedido
         Pedido pedido = new Pedido();
@@ -70,7 +81,7 @@ public class PedidoService {
                 .accion("CHECKOUT_EXITOSO")
                 .detalle("Compra finalizada desde el carrito web.")
                 .fechaUltimoCambioEstado(LocalDateTime.now())
-                .ipRegistro("127.0.0.1")
+                .ipRegistro(RequestUtils.getClientIp(httpRequest)) // Ejemplo "0.0.0.0"
                 .visibleParaUsuario(true)
                 .visibleParaAdmin(true)
                 .build();

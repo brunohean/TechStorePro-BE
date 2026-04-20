@@ -3,17 +3,23 @@ package com.hean.consigueventas.techstorepro.service;
 import com.hean.consigueventas.techstorepro.dto.carrito.ActualizarMasivoRequest;
 import com.hean.consigueventas.techstorepro.dto.carrito.CarritoDTO;
 import com.hean.consigueventas.techstorepro.dto.carrito.ItemUpdateDTO;
-import com.hean.consigueventas.techstorepro.entity.Carrito;
+import com.hean.consigueventas.techstorepro.entity.carrito.Carrito;
 import com.hean.consigueventas.techstorepro.entity.CarritoItem;
 import com.hean.consigueventas.techstorepro.entity.Producto;
 import com.hean.consigueventas.techstorepro.entity.User;
+import com.hean.consigueventas.techstorepro.entity.carrito.CarritoEvento;
+import com.hean.consigueventas.techstorepro.entity.carrito.TipoEventoCarrito;
 import com.hean.consigueventas.techstorepro.exception.custom.BusinessLogicException;
 import com.hean.consigueventas.techstorepro.exception.custom.ResourceNotFoundException;
 import com.hean.consigueventas.techstorepro.mapper.CarritoMapper;
-import com.hean.consigueventas.techstorepro.repository.CarritoRepository;
+import com.hean.consigueventas.techstorepro.repository.carrito.CarritoEventoRepository;
+import com.hean.consigueventas.techstorepro.repository.carrito.CarritoRepository;
 import com.hean.consigueventas.techstorepro.repository.ProductoRepository;
 import com.hean.consigueventas.techstorepro.repository.UserRepository;
 import com.hean.consigueventas.techstorepro.security.SecurityUtils;
+import com.hean.consigueventas.techstorepro.utils.RequestUtils;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,19 +28,31 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor // Genera el constructor para los campos 'final'
 public class CarritoService {
 
     private final CarritoRepository carritoRepo;
+    private final CarritoEventoRepository carEventRepo;
     private final ProductoRepository productoRepo;
     private final UserRepository userRepo;
     private final CarritoMapper carMapper;
+    private final HttpServletRequest httpRequest;
 
-    public CarritoService(CarritoRepository carritoRepository, ProductoRepository productoRepository, UserRepository userRepo, CarritoMapper carritoMapper) {
-        this.carritoRepo = carritoRepository;
-        this.productoRepo = productoRepository;
-        this.userRepo =  userRepo;
-        this.carMapper = carritoMapper;
+    // MÉTODOS DE SOPORTE
+
+    private void registrarEvento(Long usuarioId, TipoEventoCarrito tipo, Long productoId, Integer cantidad) {
+        CarritoEvento evento = CarritoEvento.builder()
+                .usuarioId(usuarioId)
+                .tipoEvento(tipo)
+                .productoId(productoId)
+                .cantidad(cantidad)
+                .fechaEvento(LocalDateTime.now())
+                .ipOrigen(RequestUtils.getClientIp(httpRequest))
+                .build();
+        carEventRepo.save(evento);
     }
+
+    // MÉTODOS PRINCIPALES
 
     @Transactional
     public CarritoDTO agregarProducto(Long usuarioId, Long productoId, Integer cantidad) {
@@ -77,6 +95,10 @@ public class CarritoService {
                 );
 
         Carrito carritoGuardado = carritoRepo.save(carrito);
+
+        // Registro analítico
+        registrarEvento(usuarioId, TipoEventoCarrito.AGREGAR_PRODUCTO, productoId, cantidad);
+
         return carMapper.toDto(carritoGuardado);
     }
 
@@ -116,6 +138,9 @@ public class CarritoService {
         }
 
         item.setCantidad(nuevaCantidad);
+
+        registrarEvento(usuarioId, TipoEventoCarrito.ACTUALIZAR_CANTIDAD, productoId, nuevaCantidad);
+
         return carMapper.toDto(carritoRepo.save(carrito));
     }
 
@@ -153,6 +178,8 @@ public class CarritoService {
         // Eliminar el ítem de la lista (orphanRemoval = true se encargará de borrarlo de la BD)
         carrito.getItems().removeIf(item -> item.getProducto().getId().equals(productoId));
 
+        registrarEvento(usuarioId, TipoEventoCarrito.QUITAR_PRODUCTO, productoId, 0);
+
         return carMapper.toDto(carritoRepo.save(carrito));
     }
 
@@ -163,6 +190,10 @@ public class CarritoService {
                 .orElseThrow(() -> new ResourceNotFoundException("Carrito no encontrado"));
 
         carrito.getItems().clear();
+
+        // Registro analítico
+        registrarEvento(usuarioId, TipoEventoCarrito.VACIAR_CARRITO, null, 0);
+
         carritoRepo.save(carrito);
     }
 

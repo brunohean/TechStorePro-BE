@@ -1,6 +1,6 @@
-package com.hean.consigueventas.techstorepro.repository;
+package com.hean.consigueventas.techstorepro.repository.carrito;
 
-import com.hean.consigueventas.techstorepro.entity.Carrito;
+import com.hean.consigueventas.techstorepro.entity.carrito.Carrito;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

@@ -1,4 +1,4 @@
-package com.hean.consigueventas.techstorepro.repository;
+package com.hean.consigueventas.techstorepro.repository.pedido;
 
 import com.hean.consigueventas.techstorepro.entity.pedido.Pedido;
 import org.springframework.data.jpa.repository.JpaRepository;

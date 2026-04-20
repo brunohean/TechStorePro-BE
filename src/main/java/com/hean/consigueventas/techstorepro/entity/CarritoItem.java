@@ -1,5 +1,6 @@
 package com.hean.consigueventas.techstorepro.entity;
 
+import com.hean.consigueventas.techstorepro.entity.carrito.Carrito;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import lombok.*;
