@@ -1,6 +1,5 @@
 package com.hean.consigueventas.techstorepro.entity.carrito;
 
-import com.hean.consigueventas.techstorepro.entity.CarritoItem;
 import com.hean.consigueventas.techstorepro.entity.User;
 import jakarta.persistence.*;
 import lombok.*;

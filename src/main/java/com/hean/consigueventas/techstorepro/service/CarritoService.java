@@ -4,7 +4,7 @@ import com.hean.consigueventas.techstorepro.dto.carrito.ActualizarMasivoRequest;
 import com.hean.consigueventas.techstorepro.dto.carrito.CarritoDTO;
 import com.hean.consigueventas.techstorepro.dto.carrito.ItemUpdateDTO;
 import com.hean.consigueventas.techstorepro.entity.carrito.Carrito;
-import com.hean.consigueventas.techstorepro.entity.CarritoItem;
+import com.hean.consigueventas.techstorepro.entity.carrito.CarritoItem;
 import com.hean.consigueventas.techstorepro.entity.Producto;
 import com.hean.consigueventas.techstorepro.entity.User;
 import com.hean.consigueventas.techstorepro.entity.carrito.CarritoEvento;

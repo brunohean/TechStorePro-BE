@@ -3,7 +3,7 @@ package com.hean.consigueventas.techstorepro.mapper;
 import com.hean.consigueventas.techstorepro.dto.carrito.CarritoDTO;
 import com.hean.consigueventas.techstorepro.dto.carrito.CarritoItemDTO;
 import com.hean.consigueventas.techstorepro.entity.carrito.Carrito;
-import com.hean.consigueventas.techstorepro.entity.CarritoItem;
+import com.hean.consigueventas.techstorepro.entity.carrito.CarritoItem;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
