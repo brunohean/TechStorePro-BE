@@ -38,7 +38,24 @@
         <jjwt.version>0.12.6</jjwt.version>
         <!-- Propiedad de Lombok -->
         <lombok.version>1.18.34</lombok.version>
+
+        <!-- Parches -->
+        <commons-lang3.version>3.18.0</commons-lang3.version>
+        <tomcat.version>11.0.21</tomcat.version>
+        <spring-framework.version>6.2.18</spring-framework.version>
+        <httpclient.version>4.5.13</httpclient.version>
+
     </properties>
+    <!-- Se añadio par parchar Cloudinary -->
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpclient</artifactId>
+                <version>4.5.14</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -110,6 +127,14 @@
             <groupId>org.mapstruct</groupId>
             <artifactId>mapstruct</artifactId>
             <version>${org.mapstruct.version}</version>
+        </dependency>
+
+        <!-- Cloudinary -->
+
+        <dependency>
+            <groupId>com.cloudinary</groupId>
+            <artifactId>cloudinary-http44</artifactId>
+            <version>1.39.0</version>
         </dependency>
 
     </dependencies>

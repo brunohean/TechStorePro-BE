@@ -5,6 +5,10 @@ server.port=8080
 # Indicar a Spring que confíe en los encabezados del Proxy (Nginx/Docker)
 server.forward-headers-strategy=native
 
+# Configuración de Cloudinary (Reemplaza con tu URL real, pero sin la palabra "CLOUDINARY_URL=")
+cloudinary.url=cloudinary://TU_API_KEY:TU_API_SECRET@TU_CLOUD_NAME
+
+
 # Configuración de JPA / Hibernate
 spring.jpa.hibernate.ddl-auto=update
 spring.jpa.show-sql=true
