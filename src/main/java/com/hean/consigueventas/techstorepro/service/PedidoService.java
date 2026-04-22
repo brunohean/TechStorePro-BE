@@ -15,13 +15,13 @@ import com.hean.consigueventas.techstorepro.mapper.PedidoMapper;
 import com.hean.consigueventas.techstorepro.repository.*;
 import com.hean.consigueventas.techstorepro.repository.carrito.CarritoEventoRepository;
 import com.hean.consigueventas.techstorepro.repository.carrito.CarritoRepository;
-import com.hean.consigueventas.techstorepro.repository.pedido.PedidoControlRepository;
 import com.hean.consigueventas.techstorepro.repository.pedido.PedidoEstadoLogRepository;
 import com.hean.consigueventas.techstorepro.repository.pedido.PedidoRepository;
 import com.hean.consigueventas.techstorepro.security.SecurityUtils;
 import com.hean.consigueventas.techstorepro.utils.RequestUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,11 +32,11 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor // Genera el constructor para los campos 'final'
+@Slf4j
 public class PedidoService {
 
     private final PedidoRepository pedidoRepo;
     private final PedidoEstadoLogRepository logRepo;
-    private final PedidoControlRepository controlRepo;
     private final CarritoRepository carritoRepo;
     private final CarritoEventoRepository carEventRepo;
     private final CarritoService carritoService;
@@ -280,17 +280,82 @@ public class PedidoService {
         return pedidoMapper.toLogDtoList(logs); // Aquí se usa el método que causaba el warning
     }
 
+    /**
+     * Hito Logístico 1: Despacho desde el Almacén
+     */
+    @Transactional
+    public PedidoDTO marcarComoEnviado(Long pedidoId) {
+        Pedido pedido = pedidoRepo.findById(pedidoId)
+                .orElseThrow(() -> new ResourceNotFoundException("Pedido no encontrado con ID: " + pedidoId));
 
-    private void registrarAuditoria(Pedido pedido, String accion, String detalle) {
-        PedidoControl control = PedidoControl.builder()
+        EstadoPedido estadoAnterior = pedido.getEstado();
+
+        // Validación de Estado (Business Rule)
+        if (estadoAnterior != EstadoPedido.PAGADO && estadoAnterior != EstadoPedido.PREPARANDO) {
+            throw new BusinessLogicException("Solo los pedidos en estado PAGADO/PREPARANDO pueden ser despachados. Estado actual: " + estadoAnterior);
+        }
+
+        pedido.setEstado(EstadoPedido.ENVIADO);
+
+        // Utilizamos el motor unificado (True para que el cliente lo vea en su perfil)
+        registrarAuditoria(pedido, estadoAnterior, EstadoPedido.ENVIADO, "DESPACHO", "El pedido ha salido de nuestro almacén central.", true);
+        log.info("📦 Pedido {} marcado como ENVIADO", pedidoId);
+        return pedidoMapper.toDto(pedidoRepo.save(pedido));
+    }
+
+    /**
+     * Hito Logístico 2: Entrega final al Cliente
+     */
+    @Transactional
+    public PedidoDTO marcarComoEntregado(Long pedidoId) {
+        Pedido pedido = pedidoRepo.findById(pedidoId)
+                .orElseThrow(() -> new ResourceNotFoundException("Pedido no encontrado con ID: " + pedidoId));
+
+        EstadoPedido estadoAnterior = pedido.getEstado();
+
+        // Validación de Estado (Business Rule)
+        if (estadoAnterior != EstadoPedido.ENVIADO) {
+            throw new BusinessLogicException("Un pedido debe ser ENVIADO antes de poder ser ENTREGADO.");
+        }
+
+        pedido.setEstado(EstadoPedido.ENTREGADO);
+
+        // Utilizamos el motor unificado
+        registrarAuditoria(pedido, estadoAnterior, EstadoPedido.ENTREGADO, "ENTREGA_FINAL", "Pedido recibido conforme por el cliente.", true);
+        log.info("✅ Pedido {} marcado como ENTREGADO.", pedidoId);
+        return pedidoMapper.toDto(pedidoRepo.save(pedido));
+    }
+
+    /**
+     * Motor de Trazabilidad Unificado
+     * Actualiza el registro de control del pedido y guarda el historial inmutable.
+     */
+    private void registrarAuditoria(Pedido pedido, EstadoPedido estadoAnterior, EstadoPedido estadoNuevo, String accion, String detalle, boolean visibleParaUsuario) {
+
+        // 1. Obtener la IP real de la petición usando el RequestUtils que ya tienes
+        String ipReal = RequestUtils.getClientIp(httpRequest);
+
+        // 2. Actualizar el registro "en vivo" (PedidoControl)
+        PedidoControl control = pedido.getControl();
+        control.setAccion(accion);
+        control.setDetalle(detalle);
+        control.setFechaAccion(LocalDateTime.now());
+        control.setFechaUltimoCambioEstado(LocalDateTime.now());
+        control.setIpRegistro(ipReal);
+        control.setVisibleParaUsuario(visibleParaUsuario);
+        // Al estar atado al pedido por la relación OneToOne, se guardará en cascada
+
+        // 3. Crear la "fotografía inmutable" en el historial (PedidoEstadoLog)
+        PedidoEstadoLog logHistorial = PedidoEstadoLog.builder()
                 .pedido(pedido)
-                .accion(accion)
-                .detalle(detalle)
-                .fechaAccion(LocalDateTime.now())
-                .ipRegistro("127.0.0.1") // En prod usaríamos HttpServletRequest
-                .visibleParaAdmin(true)
-                .visibleParaUsuario(true)
+                .estadoAnterior(estadoAnterior)
+                .estadoNuevo(estadoNuevo)
+                .fechaCambio(LocalDateTime.now())
+                .responsable(SecurityUtils.getUsernameAutenticado())
+                .motivo(detalle)
+                .ipOrigen(ipReal)
                 .build();
-        controlRepo.save(control);
+
+        logRepo.save(logHistorial);
     }
 }

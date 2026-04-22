@@ -5,6 +5,7 @@ import com.hean.consigueventas.techstorepro.dto.pedido.CambiarEstadoRequest;
 import com.hean.consigueventas.techstorepro.dto.pedido.CancelarPedidoRequest;
 import com.hean.consigueventas.techstorepro.dto.pedido.PedidoDTO;
 import com.hean.consigueventas.techstorepro.dto.pedido.PedidoEstadoLogDTO;
+import com.hean.consigueventas.techstorepro.security.SecurityConstants;
 import com.hean.consigueventas.techstorepro.service.PedidoService;
 import com.hean.consigueventas.techstorepro.utils.RequestUtils;
 import jakarta.servlet.http.HttpServletRequest;
@@ -96,4 +97,21 @@ public class PedidoController {
         pedidoServ.ocultarPedidoParaAdmin(id);
         return ResponseEntity.ok(new MensajeResponse("Pedido ocultado de los reportes administrativos exitosamente."));
     }
+
+    // 10. ENDPOINT CAMBIAR ESTADO: ENVIADO (ADMIN/LOGISTICA) ALMACEN
+    @PatchMapping("/{id}/enviar")
+    @PreAuthorize(SecurityConstants.HAS_ROLE_ADMIN) // O HAS_ROLE_LOGISTICA si tienes ese rol
+    public ResponseEntity<PedidoDTO> despacharPedido(@PathVariable Long id) {
+        PedidoDTO pedidoActualizado = pedidoServ.marcarComoEnviado(id);
+        return ResponseEntity.ok(pedidoActualizado);
+    }
+
+    // 11. ENDPOINT CAMBIAR ESTADO: ENTREGADO (ADMIN/LOGISTICA/REPARTIDOR) REPARTIDOR
+    @PatchMapping("/{id}/entregar")
+    @PreAuthorize(SecurityConstants.HAS_ROLE_ADMIN)
+    public ResponseEntity<PedidoDTO> entregarPedido(@PathVariable Long id) {
+        PedidoDTO pedidoActualizado = pedidoServ.marcarComoEntregado(id);
+        return ResponseEntity.ok(pedidoActualizado);
+    }
+
 }
