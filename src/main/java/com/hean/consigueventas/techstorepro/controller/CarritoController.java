@@ -8,6 +8,7 @@ import com.hean.consigueventas.techstorepro.dto.carrito.CarritoDTO;
 import com.hean.consigueventas.techstorepro.security.SecurityConstants;
 import com.hean.consigueventas.techstorepro.security.SecurityUtils;
 import com.hean.consigueventas.techstorepro.service.CarritoService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -17,12 +18,10 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/carrito")
 @PreAuthorize("hasAnyRole('ADMIN','USER')")
+@RequiredArgsConstructor
 public class CarritoController {
     private final CarritoService carServ;
 
-    public CarritoController(CarritoService carServ) {
-        this.carServ = carServ;
-    }
 
     // A. OBTENER EL CARRITO DEL USUARIO AUTENTICADO
     @GetMapping

@@ -9,6 +9,7 @@ import com.hean.consigueventas.techstorepro.service.PedidoService;
 import com.hean.consigueventas.techstorepro.utils.RequestUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -19,13 +20,10 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/pedidos")
 @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+@RequiredArgsConstructor
 public class PedidoController {
 
     private final PedidoService pedidoServ;
-
-    public PedidoController( PedidoService pedidoService ) {
-        this.pedidoServ = pedidoService;
-    }
 
     // 1. REALIZAR PEDIDO (Usuario)
     @PostMapping("/checkout")

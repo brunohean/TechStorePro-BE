@@ -5,6 +5,7 @@ import com.hean.consigueventas.techstorepro.dto.user.UserDTO;
 import com.hean.consigueventas.techstorepro.dto.user.UserSelfUpdateDTO;
 import com.hean.consigueventas.techstorepro.security.SecurityUtils;
 import com.hean.consigueventas.techstorepro.service.UserService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -14,13 +15,11 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/usuarios")
 @PreAuthorize("hasAnyRole('USER','ADMIN')")
+@RequiredArgsConstructor
 public class UserController {
 
     private final UserService userSer;
 
-    public UserController(UserService userService) {
-        this.userSer = userService;
-    }
 
     // A. LISTAR TODOS (Solo ADMIN)
     @GetMapping

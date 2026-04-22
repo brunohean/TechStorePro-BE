@@ -24,8 +24,8 @@ public class MediaController {
     @PostMapping("/upload/imagen")
     public ResponseEntity<Map<String, String>> subirImagen(@RequestParam("archivo") MultipartFile archivo) {
         try {
-            String urlPublica = cloudinaryService.procesarYSubirImagen(archivo);
-            return ResponseEntity.ok(Map.of("url", urlPublica));
+            Map<String, String> resultadoNube = cloudinaryService.subirImagen(archivo);
+            return ResponseEntity.ok(resultadoNube); // Postman mostrara url y provider_id
         } catch (IOException e) {
             log.error("Error al procesar la imagen: {}", e.getMessage());
             return ResponseEntity.internalServerError().body(Map.of("error", "Fallo al subir el archivo a la nube"));

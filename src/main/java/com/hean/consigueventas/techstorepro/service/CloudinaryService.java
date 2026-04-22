@@ -26,8 +26,8 @@ public class CloudinaryService {
     /**
      * USO 1: Imagenes (Optimización a WebP)
      */
-    public String procesarYSubirImagen(MultipartFile archivo) throws IOException {
-        log.info("Iniciando carga a Cloudinary para la imagen: {}", archivo.getOriginalFilename());
+    public Map<String, String> subirImagen(MultipartFile archivo) throws IOException {
+        log.info("Procesando imagen en Cloudinary: {}", archivo.getOriginalFilename());
 
         // Parámetros de transformación al vuelo (ETL)
         Map<String, Object> params = ObjectUtils.asMap(
@@ -39,10 +39,11 @@ public class CloudinaryService {
         // Subida a la nube
         Map<String, Object> uploadResult = cloudinary.uploader().upload(archivo.getBytes(), params);
 
-        String urlPublica = uploadResult.get("secure_url").toString();
-        log.info("Carga exitosa. URL generada: {}", urlPublica);
-
-        return urlPublica;
+        // Devolvemos tanto la URL como el ID del proveedor
+        return Map.of(
+                "url", uploadResult.get("secure_url").toString(),
+                "provider_id", uploadResult.get("public_id").toString()
+        );
     }
 
     /**
@@ -58,5 +59,17 @@ public class CloudinaryService {
 
         Map<String, Object> uploadResult = cloudinary.uploader().upload(archivo.getBytes(), params);
         return uploadResult.get("secure_url").toString();
+    }
+
+    /**
+     * USO 3: Borrado Ecológico  (Gestión de ciclo de vida)
+     */
+    public void eliminarImagen(String providerId) throws IOException {
+        log.info("Solicitando eliminación a Cloudinary del ID: {}", providerId);
+
+        // El SDK de Cloudinary requiere enviar un mapa vacío si no hay parámetros extra
+        Map<String, Object> result = cloudinary.uploader().destroy(providerId, com.cloudinary.utils.ObjectUtils.emptyMap());
+
+        log.info("Resultado de eliminación en la nube: {}", result.get("result"));
     }
 }

@@ -2,6 +2,8 @@ package com.hean.consigueventas.techstorepro.dto;
 
 import lombok.*;
 
+import java.util.List;
+
 @Getter @Setter
 @AllArgsConstructor @NoArgsConstructor
 public class ProductoDTO {
@@ -9,7 +11,8 @@ public class ProductoDTO {
     private String nombre;
     private String descripcion;
     private Double precio;
-    private String imagenUrl;
     private Integer stock; // Lo incluimos para que Angular sepa si mostrar "Agotado"
     private boolean activo;
+    // La galería de imágenes optimizada para el frontend
+    private List<ImagenProductoDTO> imagenes;
 }

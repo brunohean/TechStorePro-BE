@@ -3,21 +3,22 @@ package com.hean.consigueventas.techstorepro.controller;
 import com.hean.consigueventas.techstorepro.dto.ProductoDTO;
 import com.hean.consigueventas.techstorepro.security.SecurityConstants;
 import com.hean.consigueventas.techstorepro.service.ProductoService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/productos")
+@RequiredArgsConstructor
 public class ProductoController {
 
     private final ProductoService proSer;
 
-    public ProductoController(ProductoService productoService) {
-        this.proSer = productoService;
-    }
 
     // 1. Obtener todos los productos (Catálogo)
     @GetMapping
@@ -32,10 +33,11 @@ public class ProductoController {
     }
 
     // 3. Crear un producto (ADMIN)
-    @PostMapping
+    @PostMapping(consumes = {"multipart/form-data"})
     @PreAuthorize(SecurityConstants.HAS_ROLE_ADMIN)
-    public ResponseEntity<ProductoDTO> crear(@RequestBody ProductoDTO dto) {
-        return ResponseEntity.ok(proSer.crear(dto));
+    public ResponseEntity<ProductoDTO> crear(@RequestPart("producto") ProductoDTO dto, @RequestPart(value = "archivos", required = false) List<MultipartFile> archivos) {
+        ProductoDTO nuevoProducto = proSer.crear(dto, archivos);
+        return new ResponseEntity<>(nuevoProducto, HttpStatus.CREATED);
     }
 
     // 4. Actualizar un producto (ADMIN)

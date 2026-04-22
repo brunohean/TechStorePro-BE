@@ -2,6 +2,8 @@ package com.hean.consigueventas.techstorepro.service;
 
 import com.hean.consigueventas.techstorepro.entity.Producto;
 import com.hean.consigueventas.techstorepro.entity.Role;
+import com.hean.consigueventas.techstorepro.entity.media.ImagenProducto;
+import com.hean.consigueventas.techstorepro.entity.media.StorageProvider;
 import com.hean.consigueventas.techstorepro.repository.ProductoRepository;
 import com.hean.consigueventas.techstorepro.repository.RoleRepository;
 import lombok.RequiredArgsConstructor;
@@ -27,11 +29,22 @@ public class DataSeederService {
                     .descripcion(desc)
                     .precio(precio)
                     .stock(stock)
-                    .imagenUrl(url)
                     .activo(true)
                     .build();
+
+            ImagenProducto imagenSemilla = ImagenProducto.builder()
+                    .nombreArchivo("imagen_default_seeder.jpg")
+                    .urlPublica(url)
+                    .providerId("seeder_dummy_id_" + System.currentTimeMillis())
+                    .storageProvider(StorageProvider.CLOUDINARY)
+                    .formato("jpg")
+                    .esPrincipal(true)
+                    .build();
+
+            p.addImagen(imagenSemilla);
+
             prodRepo.save(p);
-            System.out.println("📦 Producto creado: " + nombre);
+            System.out.println("📦 Producto creado con su imagen: " + nombre);
         }
     }
 

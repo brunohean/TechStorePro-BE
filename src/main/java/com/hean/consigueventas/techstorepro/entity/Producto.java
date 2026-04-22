@@ -1,11 +1,15 @@
 package com.hean.consigueventas.techstorepro.entity;
 
+import com.hean.consigueventas.techstorepro.entity.media.ImagenProducto;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "productos")
@@ -34,7 +38,28 @@ public class Producto {
     @Column(nullable = false)
     private Integer stock;
 
-    private String imagenUrl;
-
     private boolean activo = true;
+
+    // Mapeo bidireccional: Un producto puede tener muchas imágenes
+    @OneToMany(mappedBy = "producto", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<ImagenProducto> imagenes = new ArrayList<>();
+
+    // Métodos utilitarios (Helper methods) para sincronizar la relación bidireccional
+    public void addImagen(ImagenProducto imagen) {
+        // Programación defensiva: Si MapStruct o Lombok volvieron la lista nula, la revivimos.
+        if (this.imagenes == null) {
+            this.imagenes = new ArrayList<>();
+        }
+
+        imagenes.add(imagen);       // Paso 1: El producto adopta la imagen
+        imagen.setProducto(this);   // Paso 2: La imagen reconoce a su dueño (sincroniza el ID).
+    }
+
+    public void removeImagen(ImagenProducto imagen) {
+        if (this.imagenes != null) {
+            this.imagenes.remove(imagen);
+            imagen.setProducto(null);
+        }
+    }
 }
