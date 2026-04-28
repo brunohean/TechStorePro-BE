@@ -1,13 +1,13 @@
 package com.hean.consigueventas.techstorepro.service;
 
-import com.hean.consigueventas.techstorepro.dto.ProductoDTO;
+import com.hean.consigueventas.techstorepro.dto.producto.ProductoCatalogoDTO;
+import com.hean.consigueventas.techstorepro.dto.producto.ProductoDTO;
 import com.hean.consigueventas.techstorepro.entity.Producto;
 import com.hean.consigueventas.techstorepro.entity.media.ImagenProducto;
 import com.hean.consigueventas.techstorepro.entity.media.StorageProvider;
 import com.hean.consigueventas.techstorepro.exception.custom.ResourceNotFoundException;
 import com.hean.consigueventas.techstorepro.mapper.ProductoMapper;
 import com.hean.consigueventas.techstorepro.repository.ProductoRepository;
-import com.hean.consigueventas.techstorepro.security.SecurityUtils;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,19 +33,34 @@ public class ProductoService {
         this.proMapper = productoMapper;
     }*/
 
-    // Listar todos los productos para el catálogo
+    // --- 1. ENDPOINT PÚBLICO: Catálogo Web ---
     @Transactional(readOnly = true)
-    public List<ProductoDTO> listarTodos() {
-        // Obtenemos las autoridades del usuario autenticado
-        List<Producto> productos = SecurityUtils.esAdmin()
-                ? proRepo.findAll()     // Admin ve todos
-                : proRepo.findByActivoTrue();   // User ve solo activos
-        return proMapper.toDtoList(productos);
+    public List<ProductoCatalogoDTO> listarCatalogoPublico() {
+        log.info("Consultando catálogo público (solo productos activos)");
+        List<Producto> productosActivos = proRepo.findByActivoTrue();
+        return proMapper.toCatalogoDtoList(productosActivos);
     }
 
-    // Buscar un producto específico (útil para el detalle del producto)
+    // --- 2. ENDPOINT PRIVADO: Panel de Administración ---
     @Transactional(readOnly = true)
-    public ProductoDTO obtenerPorId(Long id) {
+    public List<ProductoDTO> listarInventarioAdmin() {
+        log.info("Consultando inventario completo para el panel de administración");
+        List<Producto> todosLosProductos = proRepo.findAll();
+        // Devolvemos el DTO completo para que el admin vea stock y estados
+        return proMapper.toDtoList(todosLosProductos);
+    }
+
+    // Buscar un producto específico (PÚBLICO - SOLO ACTIVOS)
+    @Transactional(readOnly = true)
+    public ProductoDTO obtenerPorIdDetalleCatalogo(Long id) {
+        Producto producto = proRepo.findByIdAndActivoTrue(id)
+                .orElseThrow(() -> new EntityNotFoundException("Producto no encontrado o actualmente inactivo con ID: " + id));
+        return proMapper.toDto(producto);
+    }
+
+    // Buscar un producto específico (ADMIN)
+    @Transactional(readOnly = true)
+    public ProductoDTO obtenerPorIdDetalleInventario(Long id) {
         Producto producto = proRepo.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Producto no encontrado con ID: " + id));
         return proMapper.toDto(producto);
@@ -96,20 +111,49 @@ public class ProductoService {
         return proMapper.toDto(productoGuardado);
     }
 
+    /** Gestión A: Actualización Quirúrgica de Datos (JSON - Solo campos informativos) */
     @Transactional
-    public ProductoDTO actualizar(Long id, ProductoDTO dto) {
-        Producto existente = proRepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+    public ProductoDTO actualizarSoloDatos(Long id, ProductoDTO dto) {
+        Producto productoExistente = proRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con ID: " + id));
 
-        existente.setNombre(dto.getNombre());
-        existente.setPrecio(dto.getPrecio());
-        existente.setStock(dto.getStock()); // RF-BE-05: Gestión de stock
-        // ... otros campos
+        // MapStruct hace el trabajo sucio: inyecta los datos de 'dto' en 'productoExistente'
+        proMapper.actualizarEntidadDesdeDto(dto, productoExistente);
 
-        return proMapper.toDto(proRepo.save(existente));
+        log.info("Datos básicos del producto {} actualizados.", id);
+        return proMapper.toDto(proRepo.save(productoExistente));
     }
 
-    // Eliminar (Reservado para ADMIN)
+    /** Gestión B: Inyección de Nuevas Imágenes a producto existente (Multipart) */
+    @Transactional
+    public ProductoDTO agregarImagenes(Long id, List<MultipartFile> archivos) {
+        Producto producto = proRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con ID: " + id));
+
+        if (archivos != null && !archivos.isEmpty()) {
+            for (MultipartFile archivo : archivos) {
+                try {
+                    Map<String, String> datosNube = cloudService.subirImagen(archivo);
+
+                    ImagenProducto nuevaImagen = ImagenProducto.builder()
+                            .nombreArchivo(archivo.getOriginalFilename())
+                            .urlPublica(datosNube.get("url"))
+                            .providerId(datosNube.get("provider_id"))
+                            .storageProvider(StorageProvider.CLOUDINARY)
+                            .formato("webp")
+                            .esPrincipal(false) // Por defecto no son portada
+                            .build();
+
+                    producto.addImagen(nuevaImagen);
+                } catch (IOException e) {
+                    log.error("Error al subir imagen adicional: {}", e.getMessage());
+                }
+            }
+        }
+        return proMapper.toDto(proRepo.save(producto));
+    }
+
+    // Eliminar Producto (Reservado para ADMIN)
     @Transactional
     public void eliminar(Long id) {
         // 1. Buscamos el producto con todas sus relaciones
@@ -140,6 +184,32 @@ public class ProductoService {
         log.info("Producto y sus dependencias eliminados con éxito. ID: {}", id);
     }
 
+    /** Gestión C: Borrado de una Imagen en Cloudinary y BD (Ecofriendly) */
+    @Transactional
+    public void eliminarImagenEspecifica(Long productoId, Long imagenId) {
+        Producto producto = proRepo.findById(productoId)
+                .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado"));
+
+        // Buscamos la imagen dentro de la lista del producto
+        ImagenProducto imagen = producto.getImagenes().stream()
+                .filter(img -> img.getId().equals(imagenId))
+                .findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("La imagen no pertenece a este producto."));
+
+        // 1. Borrado en la nube
+        try {
+            if (imagen.getProviderId() != null) {
+                cloudService.eliminarImagen(imagen.getProviderId());
+            }
+        } catch (IOException e) {
+            log.error("No se pudo borrar de Cloudinary, pero procedemos con la BD: {}", e.getMessage());
+        }
+
+        // 2. Borrado en BD (Gracias a orphanRemoval=true en la entidad)
+        producto.removeImagen(imagen);
+        proRepo.save(producto);
+        log.info("Imagen {} eliminada del producto {}.", imagenId, productoId);
+    }
 
     // Actualiza Estado de Producto
     @Transactional

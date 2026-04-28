@@ -82,7 +82,7 @@ public class CarritoService {
                     return carritoRepo.save(nuevoCarrito);
                 });
 
-        // 5. Lógica para actualizar cantidad
+        // 5. Lógica para actualizarSoloDatos cantidad
         carrito.getItems().stream()
                 .filter(item -> item.getProducto().getId().equals(productoId))
                 .findFirst()
@@ -134,7 +134,7 @@ public class CarritoService {
             throw new BusinessLogicException("La cantidad debe ser mayor a cero");
         }
         if (item.getProducto().getStock() < nuevaCantidad) {
-            throw new BusinessLogicException("No hay suficiente stock para actualizar a esa cantidad");
+            throw new BusinessLogicException("No hay suficiente stock para actualizarSoloDatos a esa cantidad");
         }
 
         item.setCantidad(nuevaCantidad);

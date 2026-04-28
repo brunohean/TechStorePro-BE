@@ -1,4 +1,4 @@
-package com.hean.consigueventas.techstorepro.dto;
+package com.hean.consigueventas.techstorepro.dto.producto;
 
 import lombok.*;
 
