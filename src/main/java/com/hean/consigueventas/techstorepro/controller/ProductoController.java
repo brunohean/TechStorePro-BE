@@ -2,9 +2,14 @@ package com.hean.consigueventas.techstorepro.controller;
 
 import com.hean.consigueventas.techstorepro.dto.producto.ProductoCatalogoDTO;
 import com.hean.consigueventas.techstorepro.dto.producto.ProductoDTO;
+import com.hean.consigueventas.techstorepro.exception.custom.BusinessLogicException;
 import com.hean.consigueventas.techstorepro.security.SecurityConstants;
 import com.hean.consigueventas.techstorepro.service.ProductoService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -23,15 +28,21 @@ public class ProductoController {
 
     // G1. Obtener todos los productos (USER-PUBLICO)
     @GetMapping("/catalogo")
-    public ResponseEntity<List<ProductoCatalogoDTO>> listarCatalogoPublico() {
-        return ResponseEntity.ok(proSer.listarCatalogoPublico());
+    public ResponseEntity<Page<ProductoCatalogoDTO>> listarCatalogoPublico(
+            @PageableDefault(page = 0, size = 8, sort = "id", direction = Sort.Direction.ASC) Pageable pageable) {
+        // Protección CISO: Evitar que alguien pida una página de 10,000 items y sature el servidor
+        if (pageable.getPageSize() > 50) {
+            throw new BusinessLogicException("El tamaño de página solicitado (" + pageable.getPageSize() + ") excede el límite máximo permitido de 50.");
+        }
+        return ResponseEntity.ok(proSer.listarCatalogoPublico(pageable));
     }
 
     // G2. Inventario Total de Productos (ADMIN)
     @GetMapping
     @PreAuthorize(SecurityConstants.HAS_ROLE_ADMIN)
-    public ResponseEntity<List<ProductoDTO>> listarInventarioAdmin() {
-        return ResponseEntity.ok(proSer.listarInventarioAdmin());
+    public ResponseEntity<Page<ProductoDTO>> listarInventarioAdmin(
+            @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(proSer.listarInventarioAdmin(pageable));
     }
 
     // G3. Obtener un Detalle Producto por ID (ADMIN)

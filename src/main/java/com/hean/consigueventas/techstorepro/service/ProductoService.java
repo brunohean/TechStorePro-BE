@@ -11,6 +11,8 @@ import com.hean.consigueventas.techstorepro.repository.ProductoRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -33,21 +35,23 @@ public class ProductoService {
         this.proMapper = productoMapper;
     }*/
 
-    // --- 1. ENDPOINT PÚBLICO: Catálogo Web ---
+    // --- 1. ENDPOINT PÚBLICO: Catálogo Web Activos ---
     @Transactional(readOnly = true)
-    public List<ProductoCatalogoDTO> listarCatalogoPublico() {
-        log.info("Consultando catálogo público (solo productos activos)");
-        List<Producto> productosActivos = proRepo.findByActivoTrue();
-        return proMapper.toCatalogoDtoList(productosActivos);
+    public Page<ProductoCatalogoDTO> listarCatalogoPublico(Pageable pageable) {
+        log.info("Consultando catálogo público paginado - Página: {}, Tamaño: {}",
+                pageable.getPageNumber(), pageable.getPageSize()
+        );
+        Page<Producto> productosPaginados = proRepo.findByActivoTrue(pageable);
+        return productosPaginados.map(proMapper::toCatalogoDto);
     }
 
     // --- 2. ENDPOINT PRIVADO: Panel de Administración ---
     @Transactional(readOnly = true)
-    public List<ProductoDTO> listarInventarioAdmin() {
+    public Page<ProductoDTO> listarInventarioAdmin(Pageable pageable) {
         log.info("Consultando inventario completo para el panel de administración");
         List<Producto> todosLosProductos = proRepo.findAll();
-        // Devolvemos el DTO completo para que el admin vea stock y estados
-        return proMapper.toDtoList(todosLosProductos);
+        // findAll() ya soporta Pageable nativamente gracias a JpaRepository
+        return proRepo.findAll(pageable).map(proMapper::toDto);
     }
 
     // Buscar un producto específico (PÚBLICO - SOLO ACTIVOS)
