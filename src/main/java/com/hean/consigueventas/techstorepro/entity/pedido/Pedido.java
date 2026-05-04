@@ -28,6 +28,10 @@ public class Pedido {
     @Column(nullable = false)
     private EstadoPedido estado;
 
+    private String clienteNombre; // Nombre de quien recibe
+    private String celular;       // Contacto para el repartidor
+    private String direccion;     // Destino final
+
     @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<DetallePedido> detalles = new ArrayList<>();
 

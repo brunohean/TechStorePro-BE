@@ -29,9 +29,9 @@ public class PedidoController {
     // 1. REALIZAR PEDIDO (Usuario)
     @PostMapping("/checkout")
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<PedidoDTO> realizarCheckout() {
+    public ResponseEntity<PedidoDTO> realizarCheckout(@RequestBody PedidoDTO pedidoDTO) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(pedidoServ.procesarCheckout());
+                .body(pedidoServ.procesarCheckout(pedidoDTO));
     }
 
     // 2. VER MIS PEDIDOS (Usuario)

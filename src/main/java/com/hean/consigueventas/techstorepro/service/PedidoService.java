@@ -45,7 +45,7 @@ public class PedidoService {
     private final HttpServletRequest httpRequest;
 
     @Transactional
-    public PedidoDTO procesarCheckout() {
+    public PedidoDTO procesarCheckout(PedidoDTO pedidoDTO) {
         Long usuarioId = SecurityUtils.getUsuarioIdAutenticado();
 
         // 1. Recuperar el Carrito (Aseguramos que el usuario existe y tiene items)
@@ -73,6 +73,9 @@ public class PedidoService {
         pedido.setUsuario(carrito.getUsuario()); // Usamos el usuario ya cargado en el carrito
         pedido.setFecha(LocalDateTime.now());
         pedido.setEstado(EstadoPedido.PENDIENTE);
+        pedido.setClienteNombre(pedidoDTO.getClienteNombre()); // Viene del formulario de Angular
+        pedido.setCelular(pedidoDTO.getCelular());           // Viene del formulario de Angular
+        pedido.setDireccion(pedidoDTO.getDireccion());       // Viene del formulario de Angular
 
         // 3. Configurar PedidoControl usando Builder (Gobernanza y Auditoría)
         // Gracias a @MapsId, la PK de este objeto será la misma que la del Pedido

@@ -12,5 +12,10 @@ public class PedidoDTO {
     private LocalDateTime fecha;
     private Double total;
     private String estado;
+
+    private String clienteNombre;
+    private String celular;
+    private String direccion;
+
     private List<DetallePedidoDTO> detalles;
 }
