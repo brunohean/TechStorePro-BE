@@ -1,7 +1,6 @@
 package com.hean.consigueventas.techstorepro.controller;
 
-import com.hean.consigueventas.techstorepro.dto.producto.ProductoCatalogoDTO;
-import com.hean.consigueventas.techstorepro.dto.producto.ProductoDTO;
+import com.hean.consigueventas.techstorepro.dto.producto.*;
 import com.hean.consigueventas.techstorepro.exception.custom.BusinessLogicException;
 import com.hean.consigueventas.techstorepro.security.SecurityConstants;
 import com.hean.consigueventas.techstorepro.service.ProductoService;
@@ -38,54 +37,51 @@ public class ProductoController {
     }
 
     // G2. Inventario Total de Productos (ADMIN)
-    @GetMapping
+    @GetMapping("/inventario")
     @PreAuthorize(SecurityConstants.HAS_ROLE_ADMIN)
-    public ResponseEntity<Page<ProductoDTO>> listarInventarioAdmin(
+    public ResponseEntity<Page<ProductoInventarioDTO>> listarInventarioAdmin(
             @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(proSer.listarInventarioAdmin(pageable));
     }
 
-    // G3. Obtener un Detalle Producto por ID (ADMIN)
+    // G3. Obtener un Detalle Producto por ID (USER-PUBLICO)
     @GetMapping("/catalogo/{id}")
-    public ResponseEntity<ProductoDTO> obtenerDetalleCatalogo(@PathVariable Long id) {
+    public ResponseEntity<ProductoUserDetalleDTO> obtenerDetalleCatalogo(@PathVariable Long id) {
         return ResponseEntity.ok(proSer.obtenerPorIdDetalleCatalogo(id));
     }
 
     // G4. Obtener un Detalle Producto por ID (ADMIN)
-    @GetMapping("/{id}")
+    @GetMapping("/inventario/{id}")
     @PreAuthorize(SecurityConstants.HAS_ROLE_ADMIN)
-    public ResponseEntity<ProductoDTO> obtenerDetalleInventario(@PathVariable Long id) {
+    public ResponseEntity<ProductoAdminDetalleDTO> obtenerDetalleInventario(@PathVariable Long id) {
         return ResponseEntity.ok(proSer.obtenerPorIdDetalleInventario(id));
     }
 
     // Po1. Crear un producto (ADMIN)
     @PostMapping(consumes = {"multipart/form-data"})
     @PreAuthorize(SecurityConstants.HAS_ROLE_ADMIN)
-    public ResponseEntity<ProductoDTO> crear(@RequestPart("producto") ProductoDTO dto, @RequestPart(value = "archivos", required = false) List<MultipartFile> archivos) {
-        ProductoDTO nuevoProducto = proSer.crear(dto, archivos);
-        return new ResponseEntity<>(nuevoProducto, HttpStatus.CREATED);
+    public ResponseEntity<ProductoAdminDetalleDTO> crear(@RequestPart("producto") ProductoCreateDTO dto, @RequestPart(value = "archivos", required = false) List<MultipartFile> archivos) {
+        return new ResponseEntity<>(proSer.crear(dto, archivos), HttpStatus.CREATED);
     }
 
-    // Po2. Subir imágenes adicionales (ADMIN)
-    @PostMapping(value = "/{id}/imagenes", consumes = {"multipart/form-data"})
+    // Pu1. Actualizar un producto (ADMIN)
+    @PutMapping(value = "/{id}", consumes = {"multipart/form-data"})
     @PreAuthorize(SecurityConstants.HAS_ROLE_ADMIN)
-    public ResponseEntity<ProductoDTO> subirImagenesAdicionales(
+    public ResponseEntity<ProductoAdminDetalleDTO> actualizar(
             @PathVariable Long id,
-            @RequestPart("archivos") List<MultipartFile> archivos) {
-        return ResponseEntity.ok(proSer.agregarImagenes(id, archivos));
+            @RequestPart("producto") ProductoUpdateDTO dto,
+            @RequestPart(value = "archivos", required = false) List<MultipartFile> archivos) {
+        // Aseguramos que el ID del path coincida con el del DTO
+        if (dto.getId() == null || !dto.getId().equals(id)) {
+            throw new BusinessLogicException("Inconsistencia de datos: El ID del producto no coincide con la URL.");
+        }
+        return ResponseEntity.ok(proSer.actualizar(dto, archivos));
     }
 
-    // Pa1. Actualizar un datos básicos (ADMIN)
-    @PatchMapping("/{id}")
-    @PreAuthorize(SecurityConstants.HAS_ROLE_ADMIN) // RF-BE-02: Solo Admin edita
-    public ResponseEntity<ProductoDTO> actualizarSoloDatos(@PathVariable Long id, @RequestBody ProductoDTO dto) {
-        return ResponseEntity.ok(proSer.actualizarSoloDatos(id, dto));
-    }
-
-    // Pa2. Desactivar producto (ADMIN)
+    // Pa1. Desactivar producto (ADMIN)
     @PatchMapping("/{id}/estado")  //Ejemplo: /api/productos/1/estado?activo=false
     @PreAuthorize(SecurityConstants.HAS_ROLE_ADMIN)
-    public ResponseEntity<Void> cambiarEstado(@PathVariable Long id, @RequestParam boolean activo) {
+    public ResponseEntity<Void> cambiarEstado(@PathVariable Long id, @RequestParam Boolean activo) {
         proSer.cambiarEstado(id, activo);
         return ResponseEntity.noContent().build();
     }

@@ -13,5 +13,6 @@ public class ProductoCatalogoDTO {
     private String nombre;
     private Double precio;
     private Integer stock; // Útil para mostrar etiqueta "Agotado"
+    private String categoriaNombre;
     private String imagenPrincipalUrl; // La URL plana que el frontend pide
 }

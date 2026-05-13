@@ -52,4 +52,14 @@ public class GlobalExceptionHandler {
         ErrorDetalles error = new ErrorDetalles(LocalDateTime.now(), ex.getMessage(), request.getDescription(false));
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
+
+    @ExceptionHandler(org.springframework.orm.ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<Map<String, Object>> handleOptimisticLocking(Exception ex) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("timestamp", LocalDateTime.now());
+        response.put("message", "El stock cambió mientras procesabas tu compra. Por favor, intenta de nuevo.");
+        response.put("status", HttpStatus.CONFLICT.value());
+
+        return new ResponseEntity<>(response, HttpStatus.CONFLICT);
+    }
 }

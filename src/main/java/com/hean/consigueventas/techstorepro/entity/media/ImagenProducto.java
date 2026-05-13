@@ -33,7 +33,7 @@ public class ImagenProducto {
     private String formato; // ej: webp, pdf, png
 
     @Column(name = "es_principal")
-    private boolean esPrincipal; // Para saber cuál mostrar en la cuadrícula de la tienda
+    private Boolean esPrincipal; // Para saber cuál mostrar en la cuadrícula de la tienda
 
     // Relación bidireccional con Producto
     @ManyToOne(fetch = FetchType.LAZY)

@@ -7,9 +7,12 @@ import lombok.Setter;
 
 @Getter @Setter
 @AllArgsConstructor @NoArgsConstructor
-public class ImagenProductoDTO {
+public class ImagenProductoCreateDTO {
     private Long id;
+    private String nombreArchivo;
     private String urlPublica;
-    private boolean esPrincipal;
+    private String providerId;
+    private String storageProvider;
+    private Boolean esPrincipal;
     private String formato;
 }

@@ -146,6 +146,7 @@
                 <filtering>false</filtering>
             </resource>
         </resources>
+        <finalName>techstore-pro-api-hean</finalName>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>

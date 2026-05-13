@@ -38,7 +38,14 @@ public class Producto {
     @Column(nullable = false)
     private Integer stock;
 
-    private boolean activo = true;
+    private Boolean activo = true;
+
+    @Version
+    private Long version; // Control de concurrencia optimista (JPA/Hibernate)
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "categoria_id")
+    private Categoria categoria;
 
     // Mapeo bidireccional: Un producto puede tener muchas imágenes
     @OneToMany(mappedBy = "producto", cascade = CascadeType.ALL, orphanRemoval = true)

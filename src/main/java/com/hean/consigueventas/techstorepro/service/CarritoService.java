@@ -62,7 +62,7 @@ public class CarritoService {
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con ID: " + productoId));
 
         // 2. VALIDACIÓN DE ESTADO (CISO Check: No permitimos productos desactivados)
-        if (!producto.isActivo()) {
+        if (!producto.getActivo()) {
             throw new BusinessLogicException("El producto '" + producto.getNombre() + "' ya no está disponible para la venta.");
         }
 

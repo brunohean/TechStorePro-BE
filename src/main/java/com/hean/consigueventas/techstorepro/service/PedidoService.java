@@ -7,6 +7,7 @@ import com.hean.consigueventas.techstorepro.dto.pedido.PedidoEstadoLogDTO;
 import com.hean.consigueventas.techstorepro.entity.*;
 import com.hean.consigueventas.techstorepro.entity.carrito.Carrito;
 import com.hean.consigueventas.techstorepro.entity.carrito.CarritoEvento;
+import com.hean.consigueventas.techstorepro.entity.carrito.CarritoItem;
 import com.hean.consigueventas.techstorepro.entity.carrito.TipoEventoCarrito;
 import com.hean.consigueventas.techstorepro.entity.pedido.*;
 import com.hean.consigueventas.techstorepro.exception.custom.BusinessLogicException;
@@ -27,6 +28,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -48,7 +50,7 @@ public class PedidoService {
     public PedidoDTO procesarCheckout(PedidoDTO pedidoDTO) {
         Long usuarioId = SecurityUtils.getUsuarioIdAutenticado();
 
-        // 1. Recuperar el Carrito (Aseguramos que el usuario existe y tiene items)
+        // 1. Recuperar el Carrito
         Carrito carrito = carritoRepo.findByUsuarioId(usuarioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Carrito no encontrado"));
 
@@ -60,7 +62,6 @@ public class PedidoService {
         CarritoEvento evento = CarritoEvento.builder()
                 .usuarioId(usuarioId)
                 .tipoEvento(TipoEventoCarrito.INTENTO_CHECKOUT)
-                // productoId va null porque un checkout engloba todo el carrito
                 .productoId(null)
                 .cantidad(0)
                 .fechaEvento(LocalDateTime.now())
@@ -68,57 +69,73 @@ public class PedidoService {
                 .build();
         carEventRepo.save(evento);
 
-        // 2. Crear instancia de Pedido
+        // 2. Instancia de Pedido y Datos de Envío
         Pedido pedido = new Pedido();
-        pedido.setUsuario(carrito.getUsuario()); // Usamos el usuario ya cargado en el carrito
+        pedido.setUsuario(carrito.getUsuario());
         pedido.setFecha(LocalDateTime.now());
         pedido.setEstado(EstadoPedido.PENDIENTE);
-        pedido.setClienteNombre(pedidoDTO.getClienteNombre()); // Viene del formulario de Angular
-        pedido.setCelular(pedidoDTO.getCelular());           // Viene del formulario de Angular
-        pedido.setDireccion(pedidoDTO.getDireccion());       // Viene del formulario de Angular
+        pedido.setClienteNombre(pedidoDTO.getClienteNombre());
+        pedido.setCelular(pedidoDTO.getCelular());
+        pedido.setDireccion(pedidoDTO.getDireccion());
 
-        // 3. Configurar PedidoControl usando Builder (Gobernanza y Auditoría)
-        // Gracias a @MapsId, la PK de este objeto será la misma que la del Pedido
+        // 3. Gobernanza (PedidoControl)
         PedidoControl control = PedidoControl.builder()
-                .pedido(pedido) // Importante para @MapsId
+                .pedido(pedido)
                 .accion("CHECKOUT_EXITOSO")
                 .detalle("Compra finalizada desde el carrito web.")
                 .fechaUltimoCambioEstado(LocalDateTime.now())
-                .ipRegistro(RequestUtils.getClientIp(httpRequest)) // Ejemplo "0.0.0.0"
+                .ipRegistro(RequestUtils.getClientIp(httpRequest))
                 .visibleParaUsuario(true)
                 .visibleParaAdmin(true)
                 .build();
-
         pedido.setControl(control);
 
-        // 4. Procesar Ítems y Snapshot de Precios
-        List<DetallePedido> detalles = carrito.getItems().stream().map(item -> {
-            Producto producto = item.getProducto();
+        // 4. Procesar Ítems con Auto-Saneamiento del Carrito
+        List<DetallePedido> detalles = new ArrayList<>();
 
-            if (producto.getStock() < item.getCantidad()) {
-                throw new BusinessLogicException("Stock insuficiente para: " + producto.getNombre());
+        // Iteramos sobre una copia para permitir modificaciones seguras
+        for (CarritoItem item : new ArrayList<>(carrito.getItems())) {
+            Producto producto = productoRepo.findById(item.getProducto().getId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado"));
+
+            // ESCENARIO 1: Producto Agotado o Inactivo -> Remover del carrito
+            if (producto.getActivo() == null || !producto.getActivo() || producto.getStock() <= 0) {
+                carrito.getItems().remove(item);
+                carritoRepo.save(carrito);
+                throw new BusinessLogicException("El producto '" + producto.getNombre() +
+                        "' ya no está disponible y ha sido removido de su carrito.");
             }
 
-            // Descuento de inventario
+            // ESCENARIO 2: Stock Insuficiente -> Ajustar cantidad en el carrito
+            if (item.getCantidad() > producto.getStock()) {
+                int stockDisponible = producto.getStock();
+                item.setCantidad(stockDisponible);
+                carritoRepo.save(carrito);
+                throw new BusinessLogicException("Stock insuficiente para '" + producto.getNombre() +
+                        "'. Hemos ajustado su carrito automáticamente al stock disponible: " +
+                        stockDisponible + " unidades.");
+            }
+
+            // Si pasa validaciones: Descuento de inventario (Bloqueo Optimista @Version)
             producto.setStock(producto.getStock() - item.getCantidad());
             productoRepo.save(producto);
 
-            // Creamos el detalle (Asegúrate de tener un constructor o usar setters)
+            // Crear Snapshot del Detalle
             DetallePedido detalle = new DetallePedido();
             detalle.setPedido(pedido);
             detalle.setProducto(producto);
             detalle.setCantidad(item.getCantidad());
-            detalle.setPrecioUnitario(producto.getPrecio()); // Snapshot del precio actual
-            return detalle;
-        }).collect(Collectors.toList());
+            detalle.setPrecioUnitario(producto.getPrecio());
+            detalles.add(detalle);
+        }
 
         pedido.setDetalles(detalles);
         pedido.setTotal(detalles.stream().mapToDouble(d -> d.getPrecioUnitario() * d.getCantidad()).sum());
 
-        // 5. Guardar Pedido (Cascada guardará el Control y los Detalles)
+        // 5. Persistencia Final
         Pedido pedidoGuardado = pedidoRepo.save(pedido);
 
-        // 6. Limpiar Carrito
+        // 6. Limpiar Carrito tras éxito total
         carritoService.limpiarCarrito();
 
         return pedidoMapper.toDto(pedidoGuardado);

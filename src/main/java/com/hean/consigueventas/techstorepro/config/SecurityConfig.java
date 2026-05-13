@@ -72,7 +72,7 @@ public class SecurityConfig {
                 // SE BLOQUEA POR RUTAS, NO POR ROLES.
                 .authorizeHttpRequests(auth -> auth
                         // Rutas Públicas
-                        .requestMatchers("/api/auth/**","/api/productos/catalogo","/api/productos/catalogo/*").permitAll() // El catálogo, Registro y Login son público
+                        .requestMatchers("/api/auth/**","/api/productos/catalogo","/api/productos/catalogo/*", "/api/categorias/*").permitAll() // El catálogo, Registro y Login son público
                         // Rutas Protegidas por Filtro
                         .requestMatchers("/api/carrito/**").hasAnyRole(SecurityConstants.ADMIN,SecurityConstants.USER)
                         .requestMatchers("/api/pedidos/**").hasAnyRole(SecurityConstants.ADMIN,SecurityConstants.USER)

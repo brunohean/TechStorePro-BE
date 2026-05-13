@@ -18,7 +18,7 @@ public class JwtUtils {
     @Value("${api.security.token.secret}")
     private String jwtSecret;
 
-    @Value("${api.security.token.expiration:900000}") // 15 minutos por defecto en ms
+    @Value("${api.security.token.expiration}") // Se define en ms en el application.properties
     private int jwtExpirationMs;
 
     // Crear el Token para el usuario que se loguea
