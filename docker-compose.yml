@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  techstore-db:
+    image: postgres:16-alpine
+    container_name: techstore-postgres
+    environment:
+      POSTGRES_DB: TechStoreProDB
+      POSTGRES_USER: ${SPRING_DATASOURCE_USERNAME}
+      POSTGRES_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+    ports:
+      - "5433:5432"  # [Puerto de Maquina Física]:[Puerto del Contenedor]
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - techstore-network
+    restart: always
+
+  techstore-api:
+    image: heanerdna/techstore-api:v1
+    container_name: techstore-backend
+    ports:
+      - "8081:8080"  # [Puerto de Maquina Física]:[Puerto del Contenedor]
+    env_file:
+      - .env
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://techstore-db:5432/TechStoreProDB
+    depends_on:
+      - techstore-db
+    networks:
+      - techstore-network
+    restart: always
+
+volumes:
+  postgres_data:
+
+networks:
+  techstore-network:

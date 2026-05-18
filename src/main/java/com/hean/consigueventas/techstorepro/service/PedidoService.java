@@ -91,7 +91,7 @@ public class PedidoService {
         pedido.setControl(control);
 
         // 4. Procesar Ítems con Auto-Saneamiento del Carrito
-        List<DetallePedido> detalles = new ArrayList<>();
+        List<PedidoDetalle> detalles = new ArrayList<>();
 
         // Iteramos sobre una copia para permitir modificaciones seguras
         for (CarritoItem item : new ArrayList<>(carrito.getItems())) {
@@ -121,7 +121,7 @@ public class PedidoService {
             productoRepo.save(producto);
 
             // Crear Snapshot del Detalle
-            DetallePedido detalle = new DetallePedido();
+            PedidoDetalle detalle = new PedidoDetalle();
             detalle.setPedido(pedido);
             detalle.setProducto(producto);
             detalle.setCantidad(item.getCantidad());
@@ -258,7 +258,7 @@ public class PedidoService {
         EstadoPedido estadoAnterior = pedido.getEstado();
 
         // 3. Devolución de Stock (RF-BE-05) - ¡Vital mantener tu lógica!
-        for (DetallePedido detalle : pedido.getDetalles()) {
+        for (PedidoDetalle detalle : pedido.getDetalles()) {
             Producto producto = detalle.getProducto();
             producto.setStock(producto.getStock() + detalle.getCantidad());
             productoRepo.save(producto); // Reabastecemos el inventario

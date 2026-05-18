@@ -33,7 +33,7 @@ public class Pedido {
     private String direccion;     // Destino final
 
     @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<DetallePedido> detalles = new ArrayList<>();
+    private List<PedidoDetalle> detalles = new ArrayList<>();
 
     @ManyToOne
     @JoinColumn(name = "usuario_id", nullable = false)
