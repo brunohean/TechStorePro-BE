@@ -66,6 +66,14 @@ public class DataInitializer {
                     "Mouse Razer-lateral.jpg", "techstorepro/productos/tru9a8cajvjo43ej98vc", "https://res.cloudinary.com/deeg5upfr/image/upload/v1777312548/techstorepro/productos/tru9a8cajvjo43ej98vc.webp", true);
             seeder.addAditionalImage("Mouse Razer RGB Gaming", "Mouse Razer.jpg", "techstorepro/productos/smwcxqofvcbuuyvdjzb7", "https://res.cloudinary.com/deeg5upfr/image/upload/v177312549/techstorepro/productos/smwcxqofvcbuuyvdjzb7.webp");
 
+            Producto teclado = seeder.seedProducto("Teclado Mecánico RGB", "Teclado switch blue con retroiluminación", 45.9, 13, catPerifericos,
+                    "Teclado-RGB.webp", "techstorepro/productos/l8b9ethutblwsptdpaeh", "https://res.cloudinary.com/deeg5upfr/image/upload/v1777403442/techstorepro/productos/l8b9ethutblwsptdpaeh.webp", true);
+            teclado.setActivo(false);
+
+            Producto carpeta = seeder.seedProducto("Mi carpeta Especial de Ciencia", "Teclado switch blue con retroiluminación", 300.0, 22, catGeneral,
+                    "Carpeta-de-Ciencia.jpg", "techstorepro/productos/qj92sm1d71thcgnxdc9l", "https://res.cloudinary.com/deeg5upfr/image/upload/v1777403117/techstorepro/productos/qj92sm1d71thcgnxdc9l.webp", true);
+            carpeta.setActivo(false);
+
             // ==========================================
             // 5. SEMBRADO DE PEDIDOS DE PRUEBA (Usa la abstracción del servicio)
             // ==========================================

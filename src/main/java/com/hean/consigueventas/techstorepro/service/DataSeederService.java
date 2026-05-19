@@ -154,9 +154,9 @@ public class DataSeederService {
         pedido.setFecha(fecha);
         pedido.setTotal(total);
         pedido.setUsuario(usuario);
-        pedido.setCelular(celular);
-        pedido.setClienteNombre(clienteNombre);
-        pedido.setDireccion(direccion);
+        pedido.setCelular(celular != null ? celular : "999888777");
+        pedido.setClienteNombre(clienteNombre != null ? clienteNombre : "Cliente Anónimo");
+        pedido.setDireccion(direccion != null ? direccion : "Av. Sin Nombre 123, Lima");
         return pedidoRepo.save(pedido);
     }
 
