@@ -12,6 +12,9 @@ RUN mvn clean package -DskipTests
 FROM amazoncorretto:21-al2023
 WORKDIR /app
 
+# Blindaje para buscar versiones más reciente de OS (antes de copiar el jar/construir imagen)
+RUN dnf update -y && dnf clean all
+
 # Copiamos el JAR usando el finalName que definimos
 COPY --from=build /app/target/techstore-pro-api-hean.jar app.jar
 
